@@ -1,26 +1,74 @@
 @import "tailwindcss";
 
-:root {
-  --background: #ffffff;
-  --foreground: #171717;
-}
-
-@theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
-}
-
-@media (prefers-color-scheme: dark) {
+@layer base {
   :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
+    --bg-dark: #141210;
+    --card-dark: #1E1A17;
+    --surface-dark: #241F1C;
+    --surface-hover: #2A2420;
+    --border-dark: #2E2824;
+    --border-subtle: #24201D;
+    --text-primary: #F5F0EB;
+    --text-secondary: #9E958C;
+    --text-muted: #7E756C;
+    --accent-emerald: #10B981;
+    --accent-warm: #E06D53;
+  }
+
+  body {
+    background-color: var(--bg-dark);
+    color: var(--text-primary);
+    font-feature-settings: "rlig" 1, "calt" 1;
+    -webkit-tap-highlight-color: transparent;
   }
 }
 
-body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+/* Thermal Receipt Print Styles */
+@media print {
+  html, body {
+    background: #ffffff !important;
+    color: #000000 !important;
+    margin: 0 !important;
+    padding: 0 !important;
+  }
+
+  body * {
+    visibility: hidden;
+  }
+
+  #receipt-print-area, #receipt-print-area *,
+  #qr-print-tent, #qr-print-tent * {
+    visibility: visible;
+  }
+
+  #receipt-print-area {
+    position: absolute;
+    left: 0;
+    top: 0;
+    width: 100%;
+    margin: 0;
+    padding: 8px;
+    background: #ffffff !important;
+  }
+
+  #qr-print-tent {
+    position: absolute;
+    left: 50%;
+    top: 40px;
+    transform: translateX(-50%);
+    margin: 0;
+    padding: 24px;
+    background: #ffffff !important;
+    border: 2px solid #000000 !important;
+    width: 320px !important;
+  }
+
+  .no-print {
+    display: none !important;
+  }
+
+  @page {
+    margin: 0;
+    size: auto;
+  }
 }

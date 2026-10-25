@@ -1,0 +1,237 @@
+datasource db {
+  provider  = "postgresql"
+  url       = env("DATABASE_URL")
+  directUrl = env("DIRECT_URL")
+}
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+enum Role {
+  ADMIN
+  BARISTA
+}
+
+enum SessionStatus {
+  ACTIVE
+  CLOSED
+}
+
+enum OrderStatus {
+  PENDING
+  CONFIRMED
+  PREPARING
+  READY
+  COMPLETED
+  CANCELLED
+}
+
+enum PaymentStatus {
+  UNPAID
+  PARTIALLY_PAID
+  PAID
+  REFUNDED
+}
+
+enum PaymentMethod {
+  CASH
+  OTHER
+}
+
+enum PaymentRecordStatus {
+  SUCCESS
+  REFUNDED
+}
+
+model User {
+  id           String    @id @default(cuid())
+  name         String
+  email        String    @unique
+  passwordHash String
+  role         Role      @default(BARISTA)
+  isActive     Boolean   @default(true)
+  createdAt    DateTime  @default(now())
+  updatedAt    DateTime  @updatedAt
+
+  sessions            AuthSession[]
+  closedTableSessions TableSession[]       @relation("ClosedSessions")
+  paymentsRecorded    Payment[]            @relation("RecordedPayments")
+  statusHistory       OrderStatusHistory[]
+
+  @@index([email])
+}
+
+model AuthSession {
+  id         String   @id @default(cuid())
+  tokenHash  String   @unique
+  userId     String
+  user       User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  expiresAt  DateTime
+  createdAt  DateTime @default(now())
+  lastUsedAt DateTime @default(now())
+
+  @@index([userId])
+  @@index([tokenHash])
+}
+
+model Category {
+  id           String     @id @default(cuid())
+  name         String
+  slug         String     @unique
+  description  String?
+  displayOrder Int        @default(0)
+  isActive     Boolean    @default(true)
+  createdAt    DateTime   @default(now())
+  updatedAt    DateTime   @updatedAt
+  menuItems    MenuItem[]
+
+  @@index([slug])
+  @@index([isActive])
+}
+
+model MenuItem {
+  id          String      @id @default(cuid())
+  categoryId  String
+  category    Category    @relation(fields: [categoryId], references: [id])
+  name        String
+  description String?
+  price       Decimal     @db.Decimal(10, 2)
+  imageUrl    String?
+  isAvailable Boolean     @default(true)
+  isArchived  Boolean     @default(false)
+  createdAt   DateTime    @default(now())
+  updatedAt   DateTime    @updatedAt
+  orderItems  OrderItem[]
+
+  @@index([categoryId])
+  @@index([isAvailable, isArchived])
+}
+
+model CafeTable {
+  id          String         @id @default(cuid())
+  tableNumber String         @unique
+  displayName String?
+  qrCodeUrl   String?
+  isActive    Boolean        @default(true)
+  createdAt   DateTime       @default(now())
+  updatedAt   DateTime       @updatedAt
+  sessions    TableSession[]
+  orders      Order[]
+
+  @@index([tableNumber])
+  @@index([isActive])
+}
+
+model TableSession {
+  id         String        @id @default(cuid())
+  tableId    String
+  table      CafeTable     @relation(fields: [tableId], references: [id])
+  status     SessionStatus @default(ACTIVE)
+  openedAt   DateTime      @default(now())
+  closedAt   DateTime?
+  closedById String?
+  closedBy   User?         @relation("ClosedSessions", fields: [closedById], references: [id])
+  notes      String?
+  createdAt  DateTime      @default(now())
+  updatedAt  DateTime      @updatedAt
+
+  order    Order?
+  payments Payment[]
+
+  @@index([tableId, status])
+}
+
+model Order {
+  id             String        @id @default(cuid())
+  orderNumber    String        @unique
+  tableId        String
+  table          CafeTable     @relation(fields: [tableId], references: [id])
+  sessionId      String        @unique
+  session        TableSession  @relation(fields: [sessionId], references: [id])
+  status         OrderStatus   @default(PENDING)
+  paymentStatus  PaymentStatus @default(UNPAID)
+  notes          String?
+  subtotal       Decimal       @db.Decimal(10, 2)
+  total          Decimal       @db.Decimal(10, 2)
+  currency       String        @default("ETB")
+  idempotencyKey String?       @unique
+  createdAt      DateTime      @default(now())
+  updatedAt      DateTime      @updatedAt
+
+  items         OrderItem[]
+  statusHistory OrderStatusHistory[]
+  payments      Payment[]
+
+  @@index([tableId])
+  @@index([sessionId])
+  @@index([status])
+  @@index([paymentStatus])
+  @@index([createdAt])
+}
+
+model OrderItem {
+  id          String    @id @default(cuid())
+  orderId     String
+  order       Order     @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  menuItemId  String?
+  menuItem    MenuItem? @relation(fields: [menuItemId], references: [id], onDelete: SetNull)
+  productName String
+  unitPrice   Decimal   @db.Decimal(10, 2)
+  quantity    Int
+  lineTotal   Decimal   @db.Decimal(10, 2)
+  notes       String?
+  createdAt   DateTime  @default(now())
+
+  @@index([orderId])
+  @@index([menuItemId])
+}
+
+model Payment {
+  id           String              @id @default(cuid())
+  orderId      String?
+  order        Order?              @relation(fields: [orderId], references: [id], onDelete: SetNull)
+  sessionId    String
+  session      TableSession        @relation(fields: [sessionId], references: [id])
+  amount       Decimal             @db.Decimal(10, 2)
+  method       PaymentMethod       @default(CASH)
+  status       PaymentRecordStatus @default(SUCCESS)
+  reference    String?
+  notes        String?
+  recordedById String
+  recordedBy   User                @relation("RecordedPayments", fields: [recordedById], references: [id])
+  createdAt    DateTime            @default(now())
+  updatedAt    DateTime            @updatedAt
+
+  @@index([sessionId])
+  @@index([orderId])
+  @@index([recordedById])
+}
+
+model OrderStatusHistory {
+  id          String       @id @default(cuid())
+  orderId     String
+  order       Order        @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  fromStatus  OrderStatus?
+  toStatus    OrderStatus
+  changedById String?
+  changedBy   User?        @relation(fields: [changedById], references: [id], onDelete: SetNull)
+  note        String?
+  createdAt   DateTime     @default(now())
+
+  @@index([orderId])
+}
+
+model ShopSettings {
+  id             String   @id @default("default")
+  cafeName       String   @default("Barch Coffee")
+  tagline        String?  @default("Specialty Coffee & Espresso Bar")
+  address        String?  @default("Bole Medhanialem, Addis Ababa, Ethiopia")
+  phone          String?  @default("+251 91 123 4567")
+  currency       String   @default("ETB")
+  receiptHeader  String?  @default("Thank you for visiting Barch Coffee!")
+  receiptFooter  String?  @default("Freshly roasted beans • Artisan brew")
+  taxRatePercent Decimal  @default(0.00) @db.Decimal(5, 2)
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+}
