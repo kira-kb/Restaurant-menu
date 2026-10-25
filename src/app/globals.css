@@ -18,6 +18,7 @@
   body {
     background-color: var(--bg-dark);
     color: var(--text-primary);
+    font-family: var(--font-geist-sans), "Noto Sans Ethiopic", "Nyala", "Kefa", system-ui, sans-serif;
     font-feature-settings: "rlig" 1, "calt" 1;
     -webkit-tap-highlight-color: transparent;
   }

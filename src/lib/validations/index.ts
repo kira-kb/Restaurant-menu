@@ -2,20 +2,28 @@ import { z } from 'zod';
 import { Role, PaymentMethod } from '@prisma/client';
 
 export const CategoryInputSchema = z.object({
-  name: z.string().min(2, 'Name must be at least 2 characters').max(50),
+  name: z.string().min(2, 'Name must be at least 2 characters').max(100),
+  nameAm: z.string().max(100).optional().nullable().transform((val) => (val && val.trim().length > 0 ? val.trim() : null)),
+  nameEn: z.string().max(100).optional().nullable().transform((val) => (val && val.trim().length > 0 ? val.trim() : null)),
   slug: z
     .string()
     .min(2, 'Slug must be at least 2 characters')
     .max(50)
     .regex(/^[a-z0-9-]+$/, 'Slug must only contain lowercase letters, numbers, and hyphens'),
-  description: z.string().max(250).optional().nullable(),
+  description: z.string().max(250).optional().nullable().transform((val) => (val && val.trim().length > 0 ? val.trim() : null)),
+  descriptionAm: z.string().max(250).optional().nullable().transform((val) => (val && val.trim().length > 0 ? val.trim() : null)),
+  descriptionEn: z.string().max(250).optional().nullable().transform((val) => (val && val.trim().length > 0 ? val.trim() : null)),
   displayOrder: z.coerce.number().int().min(0).default(0),
   isActive: z.boolean().default(true),
 });
 
 export const MenuItemInputSchema = z.object({
-  name: z.string().min(2, 'Name must be at least 2 characters').max(100),
-  description: z.string().max(500).optional().nullable(),
+  name: z.string().min(1, 'Name must be at least 1 character').max(100),
+  nameAm: z.string().max(100).optional().nullable().transform((val) => (val && val.trim().length > 0 ? val.trim() : null)),
+  nameEn: z.string().max(100).optional().nullable().transform((val) => (val && val.trim().length > 0 ? val.trim() : null)),
+  description: z.string().max(500).optional().nullable().transform((val) => (val && val.trim().length > 0 ? val.trim() : null)),
+  descriptionAm: z.string().max(500).optional().nullable().transform((val) => (val && val.trim().length > 0 ? val.trim() : null)),
+  descriptionEn: z.string().max(500).optional().nullable().transform((val) => (val && val.trim().length > 0 ? val.trim() : null)),
   price: z.coerce.number().positive('Price must be greater than zero'),
   categoryId: z.string().min(1, 'Category is required'),
   imageUrl: z

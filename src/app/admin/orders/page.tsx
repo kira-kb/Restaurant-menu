@@ -11,7 +11,7 @@ export const dynamic = 'force-dynamic';
 
 export default async function AdminOrdersPage() {
   const orders = await prisma.order.findMany({
-    take: 100,
+    take: 200,
     orderBy: { createdAt: 'desc' },
     include: {
       table: { select: { tableNumber: true } },
@@ -67,16 +67,5 @@ export default async function AdminOrdersPage() {
     })),
   }));
 
-  return (
-    <div className="space-y-4">
-      <div>
-        <h1 className="text-xl font-medium text-[#F5F0EB]">Order history and audit</h1>
-        <p className="text-xs text-[#9E958C]">
-          Inspect historical orders, item pricing snapshots, payments, and status changes.
-        </p>
-      </div>
-
-      <AdminOrdersList initialOrders={formattedOrders} />
-    </div>
-  );
+  return <AdminOrdersList initialOrders={formattedOrders} />;
 }

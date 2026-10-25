@@ -17,6 +17,7 @@ import {
   Activity,
 } from 'lucide-react';
 import { AuditEvent, TodaysAuditData } from '@/lib/audit';
+import { useLanguage } from '@/lib/i18n/context';
 
 interface StaffOption {
   id: string;
@@ -38,6 +39,7 @@ export default function AdminAuditManager({
   staffList,
   currency,
 }: AdminAuditManagerProps) {
+  const { dict, formatCurrency, language } = useLanguage();
   // Main view tab: 'today' | 'history'
   const [activeTab, setActiveTab] = useState<'today' | 'history'>('today');
 
@@ -175,6 +177,16 @@ export default function AdminAuditManager({
 
   return (
     <div className="space-y-6">
+      {/* Header */}
+      <div>
+        <h1 className="text-xl font-semibold text-[#F5F0EB]">
+          {dict.auditPageTitle}
+        </h1>
+        <p className="text-xs text-[#9E958C]">
+          {dict.auditPageSubtitle}
+        </p>
+      </div>
+
       {/* Top Tab Switcher */}
       <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3">
         <div className="inline-flex rounded-xl border border-[#2E2824] bg-[#1E1A17] p-1">
@@ -188,7 +200,7 @@ export default function AdminAuditManager({
             }`}
           >
             <Activity className="w-3.5 h-3.5" />
-            <span>Today&apos;s barista audit</span>
+            <span>{dict.todaysOperations}</span>
             {todaysData.totalEvents > 0 && (
               <span
                 className={`text-[10px] px-1.5 py-0.5 rounded-md font-bold leading-none ${
@@ -212,7 +224,7 @@ export default function AdminAuditManager({
             }`}
           >
             <Clock className="w-3.5 h-3.5" />
-            <span>Audit history</span>
+            <span>{dict.historicalAuditLog}</span>
             <span
               className={`text-[10px] px-1.5 py-0.5 rounded-md font-bold leading-none ${
                 activeTab === 'history'
@@ -247,7 +259,7 @@ export default function AdminAuditManager({
           <div className="grid grid-cols-2 sm:grid-cols-5 gap-3">
             <div className="bg-[#1E1A17] border border-[#2E2824] rounded-2xl p-4 space-y-1">
               <span className="text-[11px] font-medium text-[#9E958C] block">
-                Total events today
+                {dict.todaysOperations}
               </span>
               <span className="text-2xl font-semibold text-[#F5F0EB] block">
                 {todaysData.totalEvents}
@@ -256,7 +268,7 @@ export default function AdminAuditManager({
 
             <div className="bg-[#1E1A17] border border-[#2E2824] rounded-2xl p-4 space-y-1">
               <span className="text-[11px] font-medium text-[#9E958C] block">
-                Orders accepted
+                {dict.awaitingAcceptance}
               </span>
               <span className="text-2xl font-semibold text-[#E06D53] block">
                 {todaysData.ordersAccepted}
@@ -265,7 +277,7 @@ export default function AdminAuditManager({
 
             <div className="bg-[#1E1A17] border border-[#2E2824] rounded-2xl p-4 space-y-1">
               <span className="text-[11px] font-medium text-[#9E958C] block">
-                Orders completed
+                {dict.filterStatusCompleted}
               </span>
               <span className="text-2xl font-semibold text-emerald-400 block">
                 {todaysData.ordersCompleted}
@@ -274,11 +286,11 @@ export default function AdminAuditManager({
 
             <div className="bg-[#1E1A17] border border-[#2E2824] rounded-2xl p-4 space-y-1">
               <span className="text-[11px] font-medium text-[#9E958C] block">
-                Payments collected
+                {dict.paymentsCollected}
               </span>
               <span className="text-2xl font-semibold text-[#F5F0EB] block">
                 {todaysData.paymentsTotal.toFixed(0)}{' '}
-                <span className="text-xs font-normal text-[#9E958C]">{currency}</span>
+                <span className="text-xs font-normal text-[#9E958C]">{formatCurrency(currency)}</span>
               </span>
               <span className="text-[10px] text-[#7E756C] block">
                 {todaysData.paymentsCount} transactions
@@ -287,7 +299,7 @@ export default function AdminAuditManager({
 
             <div className="bg-[#1E1A17] border border-[#2E2824] rounded-2xl p-4 space-y-1 col-span-2 sm:col-span-1">
               <span className="text-[11px] font-medium text-[#9E958C] block">
-                Sessions closed
+                {dict.closeSession}
               </span>
               <span className="text-2xl font-semibold text-[#10B981] block">
                 {todaysData.sessionsClosed}
@@ -497,7 +509,7 @@ export default function AdminAuditManager({
                     className="px-3 py-1.5 rounded-xl border border-[#2E2824] bg-[#241F1C] hover:bg-[#2A2420] text-[#F5F0EB] disabled:opacity-30 disabled:cursor-not-allowed transition-colors font-medium flex items-center gap-1 cursor-pointer"
                   >
                     <ChevronLeft className="w-3.5 h-3.5" />
-                    <span>Prev</span>
+                    <span>{dict.previousPage}</span>
                   </button>
 
                   <div className="flex items-center gap-1">
@@ -523,7 +535,7 @@ export default function AdminAuditManager({
                     onClick={() => setTodayPage((p) => Math.min(todayTotalPages, p + 1))}
                     className="px-3 py-1.5 rounded-xl border border-[#2E2824] bg-[#241F1C] hover:bg-[#2A2420] text-[#F5F0EB] disabled:opacity-30 disabled:cursor-not-allowed transition-colors font-medium flex items-center gap-1 cursor-pointer"
                   >
-                    <span>Next</span>
+                    <span>{dict.nextPage}</span>
                     <ChevronRight className="w-3.5 h-3.5" />
                   </button>
                 </div>
@@ -716,7 +728,7 @@ export default function AdminAuditManager({
                     className="px-3 py-1.5 rounded-xl border border-[#2E2824] bg-[#241F1C] hover:bg-[#2A2420] text-[#F5F0EB] disabled:opacity-30 disabled:cursor-not-allowed transition-colors font-medium flex items-center gap-1 cursor-pointer"
                   >
                     <ChevronLeft className="w-3.5 h-3.5" />
-                    <span>Prev</span>
+                    <span>{dict.previousPage}</span>
                   </button>
 
                   <div className="flex items-center gap-1">
@@ -758,7 +770,7 @@ export default function AdminAuditManager({
                     onClick={() => setHistoryPage((p) => Math.min(historyTotalPages, p + 1))}
                     className="px-3 py-1.5 rounded-xl border border-[#2E2824] bg-[#241F1C] hover:bg-[#2A2420] text-[#F5F0EB] disabled:opacity-30 disabled:cursor-not-allowed transition-colors font-medium flex items-center gap-1 cursor-pointer"
                   >
-                    <span>Next</span>
+                    <span>{dict.nextPage}</span>
                     <ChevronRight className="w-3.5 h-3.5" />
                   </button>
                 </div>

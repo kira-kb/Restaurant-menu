@@ -20,6 +20,7 @@ import {
   updateTableAction,
   toggleTableStatusAction,
 } from '@/lib/actions/tables';
+import { useLanguage } from '@/lib/i18n/context';
 
 interface TableRecord {
   id: string;
@@ -148,6 +149,7 @@ export default function AdminTablesManager({
   baseUrl: string;
   cafeName: string;
 }) {
+  const { dict } = useLanguage();
   const [tables, setTables] = useState<TableRecord[]>(initialTables);
 
   // Table form modal
@@ -297,12 +299,22 @@ export default function AdminTablesManager({
 
   return (
     <div className="space-y-4">
+      {/* Header */}
+      <div>
+        <h1 className="text-xl font-semibold text-[#F5F0EB]">
+          {dict.tablesPageTitle}
+        </h1>
+        <p className="text-xs text-[#9E958C]">
+          {dict.tablesPageSubtitle}
+        </p>
+      </div>
+
       {/* Header bar */}
       <div className="flex items-center justify-between bg-[#1E1A17] border border-[#2E2824] rounded-2xl p-4 shadow-xs">
         <div>
-          <h2 className="text-sm font-semibold text-[#F5F0EB]">Dining tables</h2>
+          <h2 className="text-sm font-semibold text-[#F5F0EB]">{dict.tablesPageTitle}</h2>
           <p className="text-xs text-[#9E958C]">
-            Configured dining spaces and QR code ordering links.
+            {dict.tablesPageSubtitle}
           </p>
         </div>
 
@@ -312,7 +324,7 @@ export default function AdminTablesManager({
           className="inline-flex items-center gap-1.5 bg-[#10B981] hover:bg-[#059669] text-[#141210] text-xs font-semibold px-4 py-2.5 rounded-xl transition-colors cursor-pointer shadow-xs"
         >
           <Plus className="w-4 h-4" />
-          <span>Add table</span>
+          <span>{dict.addTableBtn}</span>
         </button>
       </div>
 
@@ -322,11 +334,11 @@ export default function AdminTablesManager({
           <table className="w-full text-left text-xs">
             <thead className="bg-[#241F1C] text-[#9E958C] border-b border-[#2E2824]">
               <tr>
-                <th className="px-4 py-3 font-medium">Table</th>
-                <th className="px-4 py-3 font-medium">Display label / location</th>
-                <th className="px-4 py-3 font-medium">Current session status</th>
-                <th className="px-4 py-3 font-medium">Availability</th>
-                <th className="px-4 py-3 font-medium text-right">Actions</th>
+                <th className="px-4 py-3 font-medium">{dict.thTableNumber}</th>
+                <th className="px-4 py-3 font-medium">{dict.thDisplayName}</th>
+                <th className="px-4 py-3 font-medium">{dict.thActiveSession}</th>
+                <th className="px-4 py-3 font-medium">{dict.thStatus}</th>
+                <th className="px-4 py-3 font-medium text-right">{dict.thActions}</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-[#24201D]">
@@ -339,7 +351,7 @@ export default function AdminTablesManager({
                   <tr key={table.id} className="hover:bg-[#241F1C]/50 transition-colors">
                     <td className="px-4 py-3">
                       <span className="font-semibold text-sm text-[#F5F0EB] block">
-                        Table {table.tableNumber}
+                        {dict.table} {table.tableNumber}
                       </span>
                     </td>
                     <td className="px-4 py-3 text-[#9E958C]">
@@ -348,10 +360,10 @@ export default function AdminTablesManager({
                     <td className="px-4 py-3">
                       {hasActiveVisit ? (
                         <span className="inline-flex items-center gap-1 bg-amber-500/15 text-amber-400 border border-amber-500/30 text-[10px] px-2.5 py-0.5 rounded-full font-medium">
-                          Active visit • Order in progress
+                          {dict.sessionActive}
                         </span>
                       ) : (
-                        <span className="text-[11px] text-[#7E756C]">Vacant</span>
+                        <span className="text-[11px] text-[#7E756C]">{dict.noActiveSession}</span>
                       )}
                     </td>
                     <td className="px-4 py-3">
@@ -368,7 +380,7 @@ export default function AdminTablesManager({
                         {isToggling ? (
                           <Loader2 className="w-3 h-3 animate-spin" />
                         ) : null}
-                        <span>{table.isActive ? 'Active' : 'Inactive'}</span>
+                        <span>{table.isActive ? dict.statusActive : dict.statusInactive}</span>
                       </button>
                     </td>
                     <td className="px-4 py-3 text-right">
@@ -384,7 +396,7 @@ export default function AdminTablesManager({
                           ) : (
                             <QrCode className="w-3.5 h-3.5 text-[#10B981]" />
                           )}
-                          <span>QR code</span>
+                          <span>{dict.thQrCode}</span>
                         </button>
                         <button
                           type="button"
@@ -410,7 +422,7 @@ export default function AdminTablesManager({
           <div className="bg-[#1E1A17] w-full max-w-sm rounded-2xl shadow-2xl overflow-hidden flex flex-col border border-[#2E2824]">
             <div className="px-5 py-4 bg-[#241F1C] border-b border-[#2E2824] flex items-center justify-between">
               <h3 className="text-sm font-semibold text-[#F5F0EB]">
-                {editingTable ? 'Edit table' : 'Add new table'}
+                {editingTable ? dict.editTableModalTitle : dict.createTableModalTitle}
               </h3>
               <button
                 type="button"
@@ -431,7 +443,7 @@ export default function AdminTablesManager({
             <form onSubmit={handleSubmit} className="p-5 space-y-3.5">
               <div className="space-y-1">
                 <label className="text-xs font-medium text-[#F5F0EB] block">
-                  Table number / identifier
+                  {dict.tableNumberField}
                 </label>
                 <input
                   type="text"
@@ -445,7 +457,7 @@ export default function AdminTablesManager({
 
               <div className="space-y-1">
                 <label className="text-xs font-medium text-[#F5F0EB] block">
-                  Display name / location (optional)
+                  {dict.tableDisplayNameField}
                 </label>
                 <input
                   type="text"
@@ -465,7 +477,7 @@ export default function AdminTablesManager({
                   className="rounded border-[#2E2824] text-[#10B981] focus:ring-[#10B981] bg-[#241F1C]"
                 />
                 <label htmlFor="isActive" className="text-xs text-[#F5F0EB] cursor-pointer">
-                  Active and eligible to receive customer orders
+                  {dict.availableForOrdering}
                 </label>
               </div>
 
@@ -475,7 +487,7 @@ export default function AdminTablesManager({
                   onClick={() => setModalOpen(false)}
                   className="px-3.5 py-2 border border-[#2E2824] hover:bg-[#241F1C] text-[#9E958C] hover:text-[#F5F0EB] rounded-xl text-xs transition-colors cursor-pointer"
                 >
-                  Cancel
+                  {dict.cancelBtn}
                 </button>
                 <button
                   type="submit"
@@ -485,10 +497,10 @@ export default function AdminTablesManager({
                   {isSubmitting ? (
                     <>
                       <Loader2 className="w-3.5 h-3.5 animate-spin" />
-                      <span>Saving...</span>
+                      <span>{dict.savingTable}</span>
                     </>
                   ) : (
-                    <span>Save table</span>
+                    <span>{dict.saveTable}</span>
                   )}
                 </button>
               </div>
@@ -615,7 +627,7 @@ export default function AdminTablesManager({
                   className="flex-1 inline-flex items-center justify-center gap-1.5 bg-[#241F1C] hover:bg-[#2A2420] text-[#F5F0EB] border border-[#2E2824] text-xs font-medium py-2 rounded-xl transition-colors cursor-pointer"
                 >
                   <Printer className="w-3.5 h-3.5 text-[#10B981]" />
-                  <span>Print tent</span>
+                  <span>{dict.printTentCard}</span>
                 </button>
 
                 <button
@@ -629,7 +641,7 @@ export default function AdminTablesManager({
                   ) : (
                     <Download className="w-3.5 h-3.5" />
                   )}
-                  <span>Download PNG</span>
+                  <span>{dict.downloadQrPng}</span>
                 </button>
               </div>
             </div>

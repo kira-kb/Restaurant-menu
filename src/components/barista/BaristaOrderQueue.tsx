@@ -18,6 +18,7 @@ import {
 } from 'lucide-react';
 import ReceiptModal, { ReceiptData } from '@/components/receipt/ReceiptModal';
 import { OrderStatus } from '@prisma/client';
+import { useLanguage } from '@/lib/i18n/context';
 
 interface OrderItem {
   id: string;
@@ -65,6 +66,7 @@ export default function BaristaOrderQueue({
   receiptHeader,
   receiptFooter,
 }: BaristaOrderQueueProps) {
+  const { dict, formatCurrency, translateMenuItem } = useLanguage();
   const [orders, setOrders] = useState<OrderData[]>(initialOrders);
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [statusFilter, setStatusFilter] = useState<string>('active');
@@ -356,11 +358,11 @@ export default function BaristaOrderQueue({
           {/* Status Tabs */}
           <div className="inline-flex rounded-xl border border-[#2E2824] bg-[#241F1C] p-1 overflow-x-auto scrollbar-none">
             {[
-              { id: 'active', label: 'Active queue' },
-              { id: 'PENDING', label: 'New' },
-              { id: 'PREPARING', label: 'Preparing' },
-              { id: 'COMPLETED', label: 'Completed' },
-              { id: 'all', label: 'All orders' },
+              { id: 'active', label: dict.activeOrders },
+              { id: 'PENDING', label: dict.pendingFilter },
+              { id: 'PREPARING', label: dict.preparingFilter },
+              { id: 'COMPLETED', label: dict.completedFilter },
+              { id: 'all', label: dict.allOrders },
             ].map((tab) => {
               const count = tabCounts[tab.id as keyof typeof tabCounts];
               return (
@@ -403,10 +405,10 @@ export default function BaristaOrderQueue({
               }}
               className="bg-[#241F1C] border border-[#2E2824] text-[#F5F0EB] rounded-xl px-3 py-1.5 text-xs focus:outline-hidden focus:border-[#10B981] cursor-pointer"
             >
-              <option value="all">All tables</option>
+              <option value="all">{dict.allOrders}</option>
               {tableNumbers.map((num) => (
                 <option key={num} value={num} className="bg-[#1E1A17]">
-                  Table {num}
+                  {dict.table} {num}
                 </option>
               ))}
             </select>
@@ -415,7 +417,7 @@ export default function BaristaOrderQueue({
               onClick={handleManualRefresh}
               disabled={isRefreshing}
               className="p-2 border border-[#2E2824] hover:bg-[#2A2420] text-[#9E958C] hover:text-[#F5F0EB] rounded-xl transition-colors flex items-center justify-center cursor-pointer disabled:opacity-50"
-              title="Refresh order queue"
+              title={dict.refresh}
             >
               <RefreshCw className={`w-3.5 h-3.5 ${isRefreshing ? 'animate-spin' : ''}`} />
             </button>
@@ -427,7 +429,7 @@ export default function BaristaOrderQueue({
           <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-[#7E756C]" />
           <input
             type="text"
-            placeholder="Search order number, table, or item name..."
+            placeholder={dict.searchPlaceholder}
             value={searchQuery}
             onChange={(e) => {
               setSearchQuery(e.target.value);
@@ -442,7 +444,7 @@ export default function BaristaOrderQueue({
       {filteredOrders.length === 0 ? (
         <div className="bg-[#1E1A17] border border-[#2E2824] rounded-2xl p-12 text-center space-y-2">
           <Coffee className="w-8 h-8 text-[#7E756C] mx-auto opacity-50" />
-          <h3 className="text-sm font-medium text-[#F5F0EB]">No orders in queue</h3>
+          <h3 className="text-sm font-medium text-[#F5F0EB]">{dict.noActiveOrders}</h3>
           <p className="text-xs text-[#9E958C]">
             New customer table submissions will appear automatically.
           </p>
@@ -533,7 +535,7 @@ export default function BaristaOrderQueue({
                       <div className="space-y-0.5">
                         <span className="font-medium text-[#F5F0EB]">
                           <span className="font-bold text-[#10B981]">{item.quantity}×</span>{' '}
-                          {item.productName}
+                          {translateMenuItem(item.productName, null).name}
                         </span>
                         {item.notes && (
                           <p className="text-[11px] text-[#9E958C] italic">
@@ -542,7 +544,7 @@ export default function BaristaOrderQueue({
                         )}
                       </div>
                       <span className="text-[#9E958C] whitespace-nowrap text-[11px]">
-                        {item.lineTotal.toFixed(2)}
+                        {item.lineTotal.toFixed(2)} {formatCurrency(order.currency)}
                       </span>
                     </div>
                   ))}
@@ -596,12 +598,12 @@ export default function BaristaOrderQueue({
                       {currentAction === 'accept' ? (
                         <>
                           <Loader2 className="w-3.5 h-3.5 animate-spin" />
-                          <span>Accepting...</span>
+                          <span>...</span>
                         </>
                       ) : (
                         <>
                           <Check className="w-3.5 h-3.5" />
-                          <span>Accept order</span>
+                          <span>{dict.startPreparing}</span>
                         </>
                       )}
                     </button>
@@ -618,12 +620,12 @@ export default function BaristaOrderQueue({
                       {currentAction === 'complete' ? (
                         <>
                           <Loader2 className="w-3.5 h-3.5 animate-spin" />
-                          <span>Completing...</span>
+                          <span>...</span>
                         </>
                       ) : (
                         <>
                           <CheckCircle className="w-3.5 h-3.5 text-[#10B981]" />
-                          <span>Complete order</span>
+                          <span>{dict.markReady}</span>
                         </>
                       )}
                     </button>
@@ -649,12 +651,12 @@ export default function BaristaOrderQueue({
                         {currentAction === 'payment' ? (
                           <>
                             <Loader2 className="w-3.5 h-3.5 animate-spin" />
-                            <span>Recording...</span>
+                            <span>...</span>
                           </>
                         ) : (
                           <>
                             <DollarSign className="w-3.5 h-3.5 text-[#E06D53]" />
-                            <span>Payment received</span>
+                            <span>{dict.completeAndPay}</span>
                           </>
                         )}
                       </button>
@@ -678,12 +680,12 @@ export default function BaristaOrderQueue({
                         {currentAction === 'close' ? (
                           <>
                             <Loader2 className="w-3.5 h-3.5 animate-spin" />
-                            <span>Closing...</span>
+                            <span>...</span>
                           </>
                         ) : (
                           <>
                             <Lock className="w-3.5 h-3.5" />
-                            <span>Close session</span>
+                            <span>{dict.closeSession}</span>
                           </>
                         )}
                       </button>
@@ -696,7 +698,7 @@ export default function BaristaOrderQueue({
                       className="text-xs text-[#9E958C] hover:text-[#F5F0EB] border border-[#2E2824] hover:bg-[#241F1C] py-2 rounded-xl transition-colors flex items-center justify-center gap-1.5 cursor-pointer"
                     >
                       <Printer className="w-3.5 h-3.5" />
-                      <span>Receipt</span>
+                      <span>{dict.printReceipt}</span>
                     </button>
                   </div>
                 </div>

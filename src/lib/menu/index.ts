@@ -7,7 +7,11 @@ import { CategoryInputSchema, MenuItemInputSchema } from '@/lib/validations';
 export function serializeMenuItem<T extends {
   id: string;
   name: string;
+  nameAm?: string | null;
+  nameEn?: string | null;
   description: string | null;
+  descriptionAm?: string | null;
+  descriptionEn?: string | null;
   price: Prisma.Decimal | number;
   imageUrl: string | null;
   isAvailable: boolean;
@@ -19,7 +23,11 @@ export function serializeMenuItem<T extends {
   return {
     id: item.id,
     name: item.name,
+    nameAm: item.nameAm ?? null,
+    nameEn: item.nameEn ?? null,
     description: item.description,
+    descriptionAm: item.descriptionAm ?? null,
+    descriptionEn: item.descriptionEn ?? null,
     price: Number(item.price),
     imageUrl: item.imageUrl,
     isAvailable: item.isAvailable,
@@ -52,13 +60,21 @@ export async function fetchPublicMenuData() {
   return categories.map((cat) => ({
     id: cat.id,
     name: cat.name,
+    nameAm: cat.nameAm,
+    nameEn: cat.nameEn,
     slug: cat.slug,
     description: cat.description,
+    descriptionAm: cat.descriptionAm,
+    descriptionEn: cat.descriptionEn,
     displayOrder: cat.displayOrder,
     items: cat.menuItems.map((item) => ({
       id: item.id,
       name: item.name,
+      nameAm: item.nameAm,
+      nameEn: item.nameEn,
       description: item.description,
+      descriptionAm: item.descriptionAm,
+      descriptionEn: item.descriptionEn,
       price: Number(item.price),
       imageUrl: item.imageUrl,
       isAvailable: item.isAvailable,
@@ -134,8 +150,12 @@ export async function createCategoryAction(formData: FormData) {
 
   const rawData = {
     name: formData.get('name'),
+    nameAm: formData.get('nameAm') || null,
+    nameEn: formData.get('nameEn') || null,
     slug: formData.get('slug'),
     description: formData.get('description') || null,
+    descriptionAm: formData.get('descriptionAm') || null,
+    descriptionEn: formData.get('descriptionEn') || null,
     displayOrder: formData.get('displayOrder') || 0,
     isActive: formData.get('isActive') === 'true' || formData.get('isActive') === 'on',
   };
@@ -163,8 +183,12 @@ export async function updateCategoryAction(id: string, formData: FormData) {
 
   const rawData = {
     name: formData.get('name'),
+    nameAm: formData.get('nameAm') || null,
+    nameEn: formData.get('nameEn') || null,
     slug: formData.get('slug'),
     description: formData.get('description') || null,
+    descriptionAm: formData.get('descriptionAm') || null,
+    descriptionEn: formData.get('descriptionEn') || null,
     displayOrder: formData.get('displayOrder') || 0,
     isActive: formData.get('isActive') === 'true' || formData.get('isActive') === 'on',
   };
@@ -220,7 +244,11 @@ export async function getAdminMenuItems(search?: string, categoryId?: string) {
         ? {
             OR: [
               { name: { contains: search, mode: 'insensitive' } },
+              { nameAm: { contains: search, mode: 'insensitive' } },
+              { nameEn: { contains: search, mode: 'insensitive' } },
               { description: { contains: search, mode: 'insensitive' } },
+              { descriptionAm: { contains: search, mode: 'insensitive' } },
+              { descriptionEn: { contains: search, mode: 'insensitive' } },
             ],
           }
         : {}),
@@ -244,7 +272,11 @@ export async function createMenuItemAction(formData: FormData) {
 
   const rawData = {
     name: formData.get('name'),
+    nameAm: formData.get('nameAm') || null,
+    nameEn: formData.get('nameEn') || null,
     description: formData.get('description') || null,
+    descriptionAm: formData.get('descriptionAm') || null,
+    descriptionEn: formData.get('descriptionEn') || null,
     price: formData.get('price'),
     categoryId: formData.get('categoryId'),
     imageUrl: formData.get('imageUrl') || null,
@@ -256,7 +288,11 @@ export async function createMenuItemAction(formData: FormData) {
   const item = await prisma.menuItem.create({
     data: {
       name: validated.name,
+      nameAm: validated.nameAm,
+      nameEn: validated.nameEn,
       description: validated.description,
+      descriptionAm: validated.descriptionAm,
+      descriptionEn: validated.descriptionEn,
       price: validated.price,
       categoryId: validated.categoryId,
       imageUrl: validated.imageUrl,
@@ -275,7 +311,11 @@ export async function updateMenuItemAction(id: string, formData: FormData) {
 
   const rawData = {
     name: formData.get('name'),
+    nameAm: formData.get('nameAm') || null,
+    nameEn: formData.get('nameEn') || null,
     description: formData.get('description') || null,
+    descriptionAm: formData.get('descriptionAm') || null,
+    descriptionEn: formData.get('descriptionEn') || null,
     price: formData.get('price'),
     categoryId: formData.get('categoryId'),
     imageUrl: formData.get('imageUrl') || null,
@@ -288,7 +328,11 @@ export async function updateMenuItemAction(id: string, formData: FormData) {
     where: { id },
     data: {
       name: validated.name,
+      nameAm: validated.nameAm,
+      nameEn: validated.nameEn,
       description: validated.description,
+      descriptionAm: validated.descriptionAm,
+      descriptionEn: validated.descriptionEn,
       price: validated.price,
       categoryId: validated.categoryId,
       imageUrl: validated.imageUrl,

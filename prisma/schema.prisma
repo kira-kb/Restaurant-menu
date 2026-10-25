@@ -76,33 +76,41 @@ model AuthSession {
 }
 
 model Category {
-  id           String     @id @default(cuid())
-  name         String
-  slug         String     @unique
-  description  String?
-  displayOrder Int        @default(0)
-  isActive     Boolean    @default(true)
-  createdAt    DateTime   @default(now())
-  updatedAt    DateTime   @updatedAt
-  menuItems    MenuItem[]
+  id            String     @id @default(cuid())
+  name          String
+  nameAm        String?
+  nameEn        String?
+  slug          String     @unique
+  description   String?
+  descriptionAm String?
+  descriptionEn String?
+  displayOrder  Int        @default(0)
+  isActive      Boolean    @default(true)
+  createdAt     DateTime   @default(now())
+  updatedAt     DateTime   @updatedAt
+  menuItems     MenuItem[]
 
   @@index([slug])
   @@index([isActive])
 }
 
 model MenuItem {
-  id          String      @id @default(cuid())
-  categoryId  String
-  category    Category    @relation(fields: [categoryId], references: [id])
-  name        String
-  description String?
-  price       Decimal     @db.Decimal(10, 2)
-  imageUrl    String?
-  isAvailable Boolean     @default(true)
-  isArchived  Boolean     @default(false)
-  createdAt   DateTime    @default(now())
-  updatedAt   DateTime    @updatedAt
-  orderItems  OrderItem[]
+  id            String      @id @default(cuid())
+  categoryId    String
+  category      Category    @relation(fields: [categoryId], references: [id])
+  name          String
+  nameAm        String?
+  nameEn        String?
+  description   String?
+  descriptionAm String?
+  descriptionEn String?
+  price         Decimal     @db.Decimal(10, 2)
+  imageUrl      String?
+  isAvailable   Boolean     @default(true)
+  isArchived    Boolean     @default(false)
+  createdAt     DateTime    @default(now())
+  updatedAt     DateTime    @updatedAt
+  orderItems    OrderItem[]
 
   @@index([categoryId])
   @@index([isAvailable, isArchived])

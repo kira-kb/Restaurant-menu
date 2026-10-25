@@ -18,6 +18,7 @@ import {
 } from '@/lib/actions/staff';
 import { Role } from '@prisma/client';
 import { Button } from '@/components/ui/Button';
+import { useLanguage } from '@/lib/i18n/context';
 
 interface StaffRecord {
   id: string;
@@ -40,6 +41,7 @@ export default function AdminStaffManager({
   initialStaff: StaffRecord[];
   currentUserId: string;
 }) {
+  const { dict } = useLanguage();
   const [staff, setStaff] = useState<StaffRecord[]>(initialStaff);
 
   // Modals
@@ -157,6 +159,16 @@ export default function AdminStaffManager({
 
   return (
     <div className="space-y-4">
+      {/* Header */}
+      <div>
+        <h1 className="text-xl font-medium text-[#F5F0EB]">
+          {dict.staffPageTitle}
+        </h1>
+        <p className="text-xs text-[#9E958C]">
+          {dict.staffPageSubtitle}
+        </p>
+      </div>
+
       {feedbackMessage && (
         <div className="p-3 bg-emerald-950/30 border border-emerald-800/40 rounded-xl text-xs text-emerald-400 flex items-center gap-2">
           <CheckCircle2 className="w-4 h-4 text-emerald-400 shrink-0" />
@@ -167,9 +179,9 @@ export default function AdminStaffManager({
       {/* Action Header */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 bg-[#1E1A17] border border-[#2E2824] rounded-2xl p-4">
         <div>
-          <h2 className="text-sm font-medium text-[#F5F0EB]">Staff accounts and permissions</h2>
+          <h2 className="text-sm font-medium text-[#F5F0EB]">{dict.staffPageTitle}</h2>
           <p className="text-xs text-[#9E958C]">
-            Manage barista and administrator login credentials and security.
+            {dict.staffPageSubtitle}
           </p>
         </div>
 
@@ -178,7 +190,7 @@ export default function AdminStaffManager({
           variant="primary"
           icon={<UserPlus className="w-4 h-4" />}
         >
-          New staff account
+          {dict.addStaffBtn}
         </Button>
       </div>
 
@@ -188,11 +200,11 @@ export default function AdminStaffManager({
           <table className="w-full text-left text-xs">
             <thead className="bg-[#241F1C] text-[#9E958C] border-b border-[#2E2824]">
               <tr>
-                <th className="px-4 py-3 font-medium">Name and email</th>
-                <th className="px-4 py-3 font-medium">Role</th>
-                <th className="px-4 py-3 font-medium">Activity</th>
-                <th className="px-4 py-3 font-medium">Status</th>
-                <th className="px-4 py-3 font-medium text-right">Actions</th>
+                <th className="px-4 py-3 font-medium">{dict.thStaffName} / {dict.thStaffEmail}</th>
+                <th className="px-4 py-3 font-medium">{dict.thStaffRole}</th>
+                <th className="px-4 py-3 font-medium">{dict.thTotal}</th>
+                <th className="px-4 py-3 font-medium">{dict.thStatus}</th>
+                <th className="px-4 py-3 font-medium text-right">{dict.thActions}</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-[#2E2824]">
@@ -221,7 +233,7 @@ export default function AdminStaffManager({
                       ) : (
                         <Coffee className="w-3 h-3 text-[#9E958C]" />
                       )}
-                      <span>{member.role === Role.ADMIN ? 'Admin' : 'Barista'}</span>
+                      <span>{member.role === Role.ADMIN ? dict.roleAdmin : dict.roleBarista}</span>
                     </span>
                   </td>
                   <td className="px-4 py-3 text-[#9E958C]">
@@ -235,7 +247,7 @@ export default function AdminStaffManager({
                           : 'bg-[#241F1C] text-[#9E958C] border border-[#2E2824]'
                       }`}
                     >
-                      {member.isActive ? 'Active' : 'Inactive'}
+                      {member.isActive ? dict.statusActive : dict.statusInactive}
                     </span>
                   </td>
                   <td className="px-4 py-3 text-right">
@@ -245,15 +257,15 @@ export default function AdminStaffManager({
                         variant="secondary"
                         size="sm"
                         icon={<KeyRound className="w-3 h-3 text-[#9E958C]" />}
-                        title="Change password"
+                        title={dict.resetPasswordModalTitle}
                       >
-                        Change password
+                        {dict.resetPasswordModalTitle}
                       </Button>
 
                       <button
                         onClick={() => openEditModal(member)}
                         className="p-1.5 text-[#9E958C] hover:text-[#F5F0EB] rounded-lg hover:bg-[#2E2824] transition-colors"
-                        title="Edit staff details"
+                        title={dict.editProduct}
                       >
                         <Edit2 className="w-3.5 h-3.5" />
                       </button>
@@ -272,7 +284,7 @@ export default function AdminStaffManager({
           <div className="bg-[#1E1A17] border border-[#2E2824] w-full max-w-sm rounded-2xl shadow-2xl overflow-hidden flex flex-col">
             <div className="px-5 py-4 bg-[#241F1C] border-b border-[#2E2824] flex items-center justify-between">
               <h3 className="text-sm font-semibold text-[#F5F0EB]">
-                Create staff account
+                {dict.createStaffModalTitle}
               </h3>
               <button
                 onClick={() => setCreateModalOpen(false)}
@@ -292,7 +304,7 @@ export default function AdminStaffManager({
             <form onSubmit={handleCreateSubmit} className="p-5 space-y-3.5">
               <div className="space-y-1">
                 <label className="text-xs font-medium text-[#F5F0EB] block">
-                  Staff member name
+                  {dict.staffFullNameField}
                 </label>
                 <input
                   type="text"
@@ -305,7 +317,7 @@ export default function AdminStaffManager({
 
               <div className="space-y-1">
                 <label className="text-xs font-medium text-[#F5F0EB] block">
-                  Email address
+                  {dict.staffEmailField}
                 </label>
                 <input
                   type="email"
@@ -318,7 +330,7 @@ export default function AdminStaffManager({
 
               <div className="space-y-1">
                 <label className="text-xs font-medium text-[#F5F0EB] block">
-                  Initial password (min. 8 characters)
+                  {dict.staffPasswordField}
                 </label>
                 <input
                   type="password"
@@ -332,15 +344,15 @@ export default function AdminStaffManager({
 
               <div className="space-y-1">
                 <label className="text-xs font-medium text-[#F5F0EB] block">
-                  Role
+                  {dict.staffRoleField}
                 </label>
                 <select
                   name="role"
                   defaultValue={Role.BARISTA}
                   className="w-full bg-[#141210] border border-[#2E2824] rounded-xl px-3 py-2 text-xs text-[#F5F0EB] focus:outline-hidden focus:border-[#10B981]"
                 >
-                  <option value={Role.BARISTA}>Barista (orders and payments)</option>
-                  <option value={Role.ADMIN}>Admin (full store management)</option>
+                  <option value={Role.BARISTA}>{dict.roleBarista}</option>
+                  <option value={Role.ADMIN}>{dict.roleAdmin}</option>
                 </select>
               </div>
 
@@ -350,15 +362,15 @@ export default function AdminStaffManager({
                   variant="outline"
                   onClick={() => setCreateModalOpen(false)}
                 >
-                  Cancel
+                  {dict.cancelBtn}
                 </Button>
                 <Button
                   type="submit"
                   variant="primary"
                   isLoading={isSubmitting}
-                  loadingText="Creating account..."
+                  loadingText={dict.savingStaff}
                 >
-                  Create account
+                  {dict.saveStaff}
                 </Button>
               </div>
             </form>

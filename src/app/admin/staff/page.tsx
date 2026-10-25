@@ -17,18 +17,9 @@ export default async function AdminStaffPage() {
   ]);
 
   return (
-    <div className="space-y-4">
-      <div>
-        <h1 className="text-xl font-medium text-[#F5F0EB]">Staff accounts</h1>
-        <p className="text-xs text-[#9E958C]">
-          Manage barista staff accounts, grant access, or update passwords.
-        </p>
-      </div>
-
-      <AdminStaffManager
-        initialStaff={staff}
-        currentUserId={currentUser?.id || ''}
-      />
-    </div>
+    <AdminStaffManager
+      initialStaff={staff}
+      currentUserId={currentUser?.id || ''}
+    />
   );
 }

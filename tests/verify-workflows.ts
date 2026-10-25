@@ -81,7 +81,9 @@ async function runTests() {
     assert(menuData.length > 0, 'Public menu returns categorized structure');
     
     // Find an active item
-    const pourOver = await prisma.menuItem.findFirst({ where: { name: { contains: 'Pour-Over' } } });
+    const pourOver = await prisma.menuItem.findFirst({
+      where: { name: { contains: 'Pour-Over' }, isArchived: false },
+    });
     assert(pourOver !== null && pourOver.isAvailable, 'Yirgacheffe Pour-Over is active and available');
 
     // 4. TRANSACTIONAL ORDER CREATION TESTS

@@ -24,6 +24,7 @@ import {
   toggleMenuItemAvailabilityAction,
   archiveMenuItemAction,
 } from '@/lib/actions/menu';
+import { useLanguage } from '@/lib/i18n/context';
 
 interface CategoryOption {
   id: string;
@@ -33,7 +34,11 @@ interface CategoryOption {
 interface MenuItemRecord {
   id: string;
   name: string;
+  nameAm?: string | null;
+  nameEn?: string | null;
   description: string | null;
+  descriptionAm?: string | null;
+  descriptionEn?: string | null;
   price: number;
   imageUrl: string | null;
   isAvailable: boolean;
@@ -73,6 +78,7 @@ export default function AdminMenuManager({
   categories: CategoryOption[];
   currency: string;
 }) {
+  const { dict, formatCurrency, translateMenuItem } = useLanguage();
   const [items, setItems] = useState<MenuItemRecord[]>(initialItems);
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedCategory, setSelectedCategory] = useState('all');
@@ -104,7 +110,11 @@ export default function AdminMenuManager({
       const q = searchQuery.toLowerCase();
       return (
         item.name.toLowerCase().includes(q) ||
-        (item.description && item.description.toLowerCase().includes(q))
+        (item.nameAm && item.nameAm.toLowerCase().includes(q)) ||
+        (item.nameEn && item.nameEn.toLowerCase().includes(q)) ||
+        (item.description && item.description.toLowerCase().includes(q)) ||
+        (item.descriptionAm && item.descriptionAm.toLowerCase().includes(q)) ||
+        (item.descriptionEn && item.descriptionEn.toLowerCase().includes(q))
       );
     }
     return true;
@@ -207,7 +217,11 @@ export default function AdminMenuManager({
               ? {
                   ...i,
                   name: updated.name,
+                  nameAm: updated.nameAm,
+                  nameEn: updated.nameEn,
                   description: updated.description,
+                  descriptionAm: updated.descriptionAm,
+                  descriptionEn: updated.descriptionEn,
                   price: Number(updated.price),
                   categoryId: updated.categoryId,
                   imageUrl: updated.imageUrl,
@@ -224,7 +238,11 @@ export default function AdminMenuManager({
           {
             id: created.id,
             name: created.name,
+            nameAm: created.nameAm,
+            nameEn: created.nameEn,
             description: created.description,
+            descriptionAm: created.descriptionAm,
+            descriptionEn: created.descriptionEn,
             price: Number(created.price),
             imageUrl: created.imageUrl,
             isAvailable: created.isAvailable,
@@ -244,6 +262,16 @@ export default function AdminMenuManager({
 
   return (
     <div className="space-y-4">
+      {/* Header */}
+      <div>
+        <h1 className="text-xl font-semibold text-[#F5F0EB]">
+          {dict.menuPageTitle}
+        </h1>
+        <p className="text-xs text-[#9E958C]">
+          {dict.menuPageSubtitle}
+        </p>
+      </div>
+
       {/* Action & Filter Header */}
       <div className="flex flex-col md:flex-row items-stretch md:items-center justify-between gap-3 bg-[#1E1A17] border border-[#2E2824] rounded-2xl p-4 shadow-xs">
         <div className="flex flex-wrap items-center gap-2 flex-1">
@@ -252,7 +280,7 @@ export default function AdminMenuManager({
             <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-[#7E756C]" />
             <input
               type="text"
-              placeholder="Search products or ingredients..."
+              placeholder={dict.searchProductsPlaceholder}
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               className="w-full bg-[#241F1C] border border-[#2E2824] text-[#F5F0EB] placeholder-[#7E756C] text-xs rounded-xl pl-9 pr-3 py-2.5 focus:outline-hidden focus:border-[#10B981] transition-colors"
@@ -265,7 +293,7 @@ export default function AdminMenuManager({
             onChange={(e) => setSelectedCategory(e.target.value)}
             className="bg-[#241F1C] border border-[#2E2824] text-[#F5F0EB] rounded-xl px-3 py-2 text-xs focus:outline-hidden focus:border-[#10B981] cursor-pointer"
           >
-            <option value="all" className="bg-[#1E1A17]">All categories ({items.length})</option>
+            <option value="all" className="bg-[#1E1A17]">{dict.allCategoriesFilter} ({items.length})</option>
             {categories.map((c) => {
               const count = items.filter((i) => i.categoryId === c.id).length;
               return (
@@ -286,10 +314,10 @@ export default function AdminMenuManager({
                   ? 'bg-[#10B981] text-[#141210] font-semibold shadow-xs'
                   : 'text-[#9E958C] hover:text-[#F5F0EB]'
               }`}
-              title="Cards view"
+              title={dict.cardsView}
             >
               <LayoutGrid className="w-3.5 h-3.5" />
-              <span>Cards</span>
+              <span>{dict.cardsView}</span>
             </button>
             <button
               type="button"
@@ -299,10 +327,10 @@ export default function AdminMenuManager({
                   ? 'bg-[#10B981] text-[#141210] font-semibold shadow-xs'
                   : 'text-[#9E958C] hover:text-[#F5F0EB]'
               }`}
-              title="Table view"
+              title={dict.tableView}
             >
               <List className="w-3.5 h-3.5" />
-              <span>Table</span>
+              <span>{dict.tableView}</span>
             </button>
           </div>
         </div>
@@ -313,7 +341,7 @@ export default function AdminMenuManager({
           className="inline-flex items-center justify-center gap-1.5 bg-[#10B981] hover:bg-[#059669] text-[#141210] text-xs font-semibold px-4 py-2.5 rounded-xl transition-colors shrink-0 shadow-xs cursor-pointer"
         >
           <Plus className="w-4 h-4" />
-          <span>Add product</span>
+          <span>{dict.addProductBtn}</span>
         </button>
       </div>
 
@@ -323,9 +351,9 @@ export default function AdminMenuManager({
           {filtered.length === 0 ? (
             <div className="bg-[#1E1A17] border border-[#2E2824] rounded-2xl p-12 text-center space-y-2">
               <Coffee className="w-8 h-8 text-[#7E756C] mx-auto opacity-50" />
-              <p className="text-sm font-medium text-[#F5F0EB]">No menu products found</p>
+              <p className="text-sm font-medium text-[#F5F0EB]">{dict.noProductsFound}</p>
               <p className="text-xs text-[#9E958C]">
-                Try adjusting your search or category filter.
+                {dict.noItemsFoundDesc}
               </p>
             </div>
           ) : (
@@ -418,11 +446,20 @@ export default function AdminMenuManager({
                     <div className="p-4 space-y-3 flex-1 flex flex-col justify-between">
                       <div className="space-y-1">
                         <div className="flex items-start justify-between gap-2">
-                          <h3 className="font-semibold text-sm text-[#F5F0EB] leading-tight line-clamp-1">
-                            {item.name}
-                          </h3>
-                          <span className="text-xs font-bold text-[#E06D53] whitespace-nowrap bg-[#241F1C] border border-[#2E2824] px-2 py-0.5 rounded-lg">
-                            {Number(item.price).toFixed(2)} {currency}
+                          <div className="min-w-0 flex-1">
+                            <h3 className="font-semibold text-sm text-[#F5F0EB] leading-tight line-clamp-1">
+                              {item.name}
+                            </h3>
+                            {(item.nameAm || item.nameEn) && (
+                              <div className="flex items-center gap-1.5 mt-0.5 text-[10px] text-[#9E958C] truncate">
+                                {item.nameAm && <span title="Amharic name">🇪🇹 {item.nameAm}</span>}
+                                {item.nameAm && item.nameEn && <span>•</span>}
+                                {item.nameEn && <span title="English name">🇬🇧 {item.nameEn}</span>}
+                              </div>
+                            )}
+                          </div>
+                          <span className="text-xs font-bold text-[#E06D53] whitespace-nowrap bg-[#241F1C] border border-[#2E2824] px-2 py-0.5 rounded-lg shrink-0">
+                            {Number(item.price).toFixed(2)} {formatCurrency(currency)}
                           </span>
                         </div>
 
@@ -433,12 +470,22 @@ export default function AdminMenuManager({
                         ) : (
                           <p className="text-[11px] text-[#7E756C] italic">No description provided</p>
                         )}
+                        {(item.descriptionAm || item.descriptionEn) && (
+                          <div className="text-[10px] text-[#7E756C] space-y-0.5 pt-0.5">
+                            {item.descriptionAm && (
+                              <p className="truncate"><span className="text-[#9E958C]">🇪🇹</span> {item.descriptionAm}</p>
+                            )}
+                            {item.descriptionEn && (
+                              <p className="truncate"><span className="text-[#9E958C]">🇬🇧</span> {item.descriptionEn}</p>
+                            )}
+                          </div>
+                        )}
                       </div>
 
                       {/* Stock Status & Actions */}
                       <div className="pt-2.5 border-t border-[#2E2824] space-y-2.5">
                         <div className="flex items-center justify-between">
-                          <span className="text-[11px] text-[#9E958C]">Availability:</span>
+                          <span className="text-[11px] text-[#9E958C]">{dict.thStatus}:</span>
                           <button
                             type="button"
                             onClick={() => handleToggleAvailability(item.id)}
@@ -454,7 +501,7 @@ export default function AdminMenuManager({
                             ) : item.isAvailable ? (
                               <Check className="w-3 h-3 text-emerald-400" />
                             ) : null}
-                            <span>{item.isAvailable ? 'In stock' : 'Sold out'}</span>
+                            <span>{item.isAvailable ? dict.inStock : dict.soldOut}</span>
                           </button>
                         </div>
 
@@ -463,17 +510,17 @@ export default function AdminMenuManager({
                             type="button"
                             onClick={() => openQuickLinkModal(item)}
                             className="flex-1 inline-flex items-center justify-center gap-1 bg-[#241F1C] hover:bg-[#2A2420] text-[#F5F0EB] border border-[#2E2824] text-[11px] font-medium py-1.5 px-2 rounded-xl transition-colors cursor-pointer"
-                            title="Quick update image link"
+                            title={dict.changeImageLink}
                           >
                             <Link2 className="w-3 h-3 text-[#10B981]" />
-                            <span>Image link</span>
+                            <span>{dict.changeImageLink}</span>
                           </button>
 
                           <button
                             type="button"
                             onClick={() => openEditModal(item)}
                             className="p-1.5 text-[#9E958C] hover:text-[#F5F0EB] rounded-xl hover:bg-[#241F1C] border border-transparent hover:border-[#2E2824] transition-colors cursor-pointer"
-                            title="Edit full product details"
+                            title={dict.editProduct}
                           >
                             <Edit2 className="w-3.5 h-3.5" />
                           </button>
@@ -483,7 +530,7 @@ export default function AdminMenuManager({
                             onClick={() => handleArchive(item.id, item.name)}
                             disabled={isItemArchiving}
                             className="p-1.5 text-[#7E756C] hover:text-red-400 rounded-xl hover:bg-red-500/10 transition-colors cursor-pointer disabled:opacity-50"
-                            title="Archive product"
+                            title={dict.archiveProduct}
                           >
                             {isItemArchiving ? (
                               <Loader2 className="w-3.5 h-3.5 animate-spin" />
@@ -510,18 +557,18 @@ export default function AdminMenuManager({
               <thead className="bg-[#241F1C] text-[#9E958C] border-b border-[#2E2824]">
                 <tr>
                   <th className="px-4 py-3 font-medium w-16">Photo</th>
-                  <th className="px-4 py-3 font-medium">Product name</th>
-                  <th className="px-4 py-3 font-medium">Category</th>
-                  <th className="px-4 py-3 font-medium">Price</th>
-                  <th className="px-4 py-3 font-medium">Availability</th>
-                  <th className="px-4 py-3 font-medium text-right">Actions</th>
+                  <th className="px-4 py-3 font-medium">{dict.productNameEn}</th>
+                  <th className="px-4 py-3 font-medium">{dict.categoryLabel}</th>
+                  <th className="px-4 py-3 font-medium">{dict.priceLabel}</th>
+                  <th className="px-4 py-3 font-medium">{dict.thStatus}</th>
+                  <th className="px-4 py-3 font-medium text-right">{dict.thActions}</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-[#24201D]">
                 {filtered.length === 0 ? (
                   <tr>
                     <td colSpan={6} className="px-4 py-8 text-center text-[#7E756C]">
-                      No menu items found.
+                      {dict.noProductsFound}
                     </td>
                   </tr>
                 ) : (
@@ -573,6 +620,13 @@ export default function AdminMenuManager({
                             <span className="font-medium text-[#F5F0EB] block">
                               {item.name}
                             </span>
+                            {(item.nameAm || item.nameEn) && (
+                              <div className="flex items-center gap-2 text-[10px] text-[#9E958C]">
+                                {item.nameAm && <span>🇪🇹 {item.nameAm}</span>}
+                                {item.nameAm && item.nameEn && <span>•</span>}
+                                {item.nameEn && <span>🇬🇧 {item.nameEn}</span>}
+                              </div>
+                            )}
                             {item.description && (
                               <span className="text-[11px] text-[#9E958C] block max-w-md truncate">
                                 {item.description}
@@ -586,7 +640,7 @@ export default function AdminMenuManager({
                           </span>
                         </td>
                         <td className="px-4 py-3 font-semibold text-[#E06D53]">
-                          {Number(item.price).toFixed(2)} {currency}
+                          {Number(item.price).toFixed(2)} {formatCurrency(currency)}
                         </td>
                         <td className="px-4 py-3">
                           <button
@@ -602,7 +656,7 @@ export default function AdminMenuManager({
                             {isItemToggling ? (
                               <Loader2 className="w-3 h-3 animate-spin" />
                             ) : null}
-                            <span>{item.isAvailable ? 'In stock' : 'Sold out'}</span>
+                            <span>{item.isAvailable ? dict.inStock : dict.soldOut}</span>
                           </button>
                         </td>
                         <td className="px-4 py-3 text-right">
@@ -611,7 +665,7 @@ export default function AdminMenuManager({
                               type="button"
                               onClick={() => openQuickLinkModal(item)}
                               className="p-1.5 text-[#9E958C] hover:text-[#F5F0EB] rounded-xl hover:bg-[#241F1C] transition-colors cursor-pointer"
-                              title="Update image link"
+                              title={dict.changeImageLink}
                             >
                               <Link2 className="w-3.5 h-3.5" />
                             </button>
@@ -619,7 +673,7 @@ export default function AdminMenuManager({
                               type="button"
                               onClick={() => openEditModal(item)}
                               className="p-1.5 text-[#9E958C] hover:text-[#F5F0EB] rounded-xl hover:bg-[#241F1C] transition-colors cursor-pointer"
-                              title="Edit product"
+                              title={dict.editProduct}
                             >
                               <Edit2 className="w-3.5 h-3.5" />
                             </button>
@@ -628,7 +682,7 @@ export default function AdminMenuManager({
                               onClick={() => handleArchive(item.id, item.name)}
                               disabled={isItemArchiving}
                               className="p-1.5 text-[#7E756C] hover:text-red-400 rounded-xl hover:bg-red-500/10 transition-colors cursor-pointer disabled:opacity-50"
-                              title="Archive product"
+                              title={dict.archiveProduct}
                             >
                               {isItemArchiving ? (
                                 <Loader2 className="w-3.5 h-3.5 animate-spin" />
@@ -802,7 +856,7 @@ export default function AdminMenuManager({
           <div className="bg-[#1E1A17] w-full max-w-md rounded-2xl shadow-2xl overflow-hidden flex flex-col border border-[#2E2824] max-h-[90vh]">
             <div className="px-5 py-4 bg-[#241F1C] border-b border-[#2E2824] flex items-center justify-between">
               <h3 className="text-sm font-semibold text-[#F5F0EB]">
-                {editingItem ? 'Edit product' : 'Add new product'}
+                {editingItem ? dict.editProductModalTitle : dict.createProductModalTitle}
               </h3>
               <button
                 type="button"
@@ -823,7 +877,7 @@ export default function AdminMenuManager({
             <form onSubmit={handleSubmit} className="p-5 space-y-3.5 overflow-y-auto">
               <div className="space-y-1">
                 <label className="text-xs font-medium text-[#F5F0EB] block">
-                  Product name
+                  Product name <span className="text-[#10B981] font-normal">(Primary / Fallback)</span>
                 </label>
                 <input
                   type="text"
@@ -833,6 +887,44 @@ export default function AdminMenuManager({
                   placeholder="e.g. Yirgacheffe Pour-Over"
                   className="w-full bg-[#241F1C] border border-[#2E2824] rounded-xl px-3 py-2 text-xs text-[#F5F0EB] placeholder-[#7E756C] focus:outline-hidden focus:border-[#10B981] transition-colors"
                 />
+              </div>
+
+              {/* Optional Bilingual Names */}
+              <div className="p-3 bg-[#241F1C] border border-[#2E2824] rounded-xl space-y-2">
+                <div className="flex items-center justify-between">
+                  <span className="text-[11px] font-semibold text-[#F5F0EB]">
+                    Bilingual Names <span className="text-[#9E958C] font-normal">(Optional)</span>
+                  </span>
+                  <span className="text-[10px] text-[#10B981]">
+                    Amharic & English
+                  </span>
+                </div>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                  <div className="space-y-1">
+                    <label className="text-[11px] text-[#9E958C] flex items-center gap-1">
+                      <span>🇪🇹 Amharic name (አማርኛ)</span>
+                    </label>
+                    <input
+                      type="text"
+                      name="nameAm"
+                      defaultValue={editingItem?.nameAm || ''}
+                      placeholder="ለምሳሌ፡ ይርጋጨፌ ፑር ኦቨር"
+                      className="w-full bg-[#1E1A17] border border-[#2E2824] rounded-lg px-2.5 py-1.5 text-xs text-[#F5F0EB] placeholder-[#7E756C] focus:outline-hidden focus:border-[#10B981] transition-colors"
+                    />
+                  </div>
+                  <div className="space-y-1">
+                    <label className="text-[11px] text-[#9E958C] flex items-center gap-1">
+                      <span>🇬🇧 English name</span>
+                    </label>
+                    <input
+                      type="text"
+                      name="nameEn"
+                      defaultValue={editingItem?.nameEn || ''}
+                      placeholder="e.g. Yirgacheffe Pour-Over"
+                      className="w-full bg-[#1E1A17] border border-[#2E2824] rounded-lg px-2.5 py-1.5 text-xs text-[#F5F0EB] placeholder-[#7E756C] focus:outline-hidden focus:border-[#10B981] transition-colors"
+                    />
+                  </div>
+                </div>
               </div>
 
               <div className="space-y-1">
@@ -929,7 +1021,7 @@ export default function AdminMenuManager({
 
               <div className="space-y-1">
                 <label className="text-xs font-medium text-[#F5F0EB] block">
-                  Description & tasting notes
+                  Description & tasting notes <span className="text-[#10B981] font-normal">(Primary / Fallback)</span>
                 </label>
                 <textarea
                   name="description"
@@ -938,6 +1030,44 @@ export default function AdminMenuManager({
                   placeholder="Floral notes, jasmine, bergamot finish..."
                   className="w-full bg-[#241F1C] border border-[#2E2824] rounded-xl px-3 py-2 text-xs text-[#F5F0EB] placeholder-[#7E756C] focus:outline-hidden focus:border-[#10B981] transition-colors"
                 />
+              </div>
+
+              {/* Optional Bilingual Descriptions */}
+              <div className="p-3 bg-[#241F1C] border border-[#2E2824] rounded-xl space-y-2">
+                <div className="flex items-center justify-between">
+                  <span className="text-[11px] font-semibold text-[#F5F0EB]">
+                    Bilingual Descriptions <span className="text-[#9E958C] font-normal">(Optional)</span>
+                  </span>
+                  <span className="text-[10px] text-[#10B981]">
+                    Amharic & English
+                  </span>
+                </div>
+                <div className="space-y-2">
+                  <div className="space-y-1">
+                    <label className="text-[11px] text-[#9E958C] flex items-center gap-1">
+                      <span>🇪🇹 Amharic description (የአማርኛ ማብራሪያ)</span>
+                    </label>
+                    <textarea
+                      name="descriptionAm"
+                      rows={2}
+                      defaultValue={editingItem?.descriptionAm || ''}
+                      placeholder="የአበባ መዓዛ ያለው፣ የጃስሚን ጣዕም..."
+                      className="w-full bg-[#1E1A17] border border-[#2E2824] rounded-lg px-2.5 py-1.5 text-xs text-[#F5F0EB] placeholder-[#7E756C] focus:outline-hidden focus:border-[#10B981] transition-colors"
+                    />
+                  </div>
+                  <div className="space-y-1">
+                    <label className="text-[11px] text-[#9E958C] flex items-center gap-1">
+                      <span>🇬🇧 English description</span>
+                    </label>
+                    <textarea
+                      name="descriptionEn"
+                      rows={2}
+                      defaultValue={editingItem?.descriptionEn || ''}
+                      placeholder="Floral notes, sweet jasmine, and bergamot citrus finish..."
+                      className="w-full bg-[#1E1A17] border border-[#2E2824] rounded-lg px-2.5 py-1.5 text-xs text-[#F5F0EB] placeholder-[#7E756C] focus:outline-hidden focus:border-[#10B981] transition-colors"
+                    />
+                  </div>
+                </div>
               </div>
 
               <div className="flex items-center gap-2 pt-1">
@@ -949,7 +1079,7 @@ export default function AdminMenuManager({
                   className="rounded border-[#2E2824] text-[#10B981] focus:ring-[#10B981] bg-[#241F1C]"
                 />
                 <label htmlFor="isAvailable" className="text-xs text-[#F5F0EB] cursor-pointer">
-                  Currently in stock and available for ordering
+                  {dict.availableForOrdering}
                 </label>
               </div>
 
@@ -959,7 +1089,7 @@ export default function AdminMenuManager({
                   onClick={() => setModalOpen(false)}
                   className="px-3.5 py-2 border border-[#2E2824] hover:bg-[#241F1C] text-[#9E958C] hover:text-[#F5F0EB] rounded-xl text-xs transition-colors cursor-pointer"
                 >
-                  Cancel
+                  {dict.cancelBtn}
                 </button>
                 <button
                   type="submit"
@@ -969,10 +1099,10 @@ export default function AdminMenuManager({
                   {isSubmitting ? (
                     <>
                       <Loader2 className="w-3.5 h-3.5 animate-spin" />
-                      <span>Saving...</span>
+                      <span>{dict.savingProduct}</span>
                     </>
                   ) : (
-                    <span>Save product</span>
+                    <span>{dict.saveProduct}</span>
                   )}
                 </button>
               </div>

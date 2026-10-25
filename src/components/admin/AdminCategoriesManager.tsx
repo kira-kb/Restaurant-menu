@@ -7,6 +7,7 @@ import {
   updateCategoryAction,
   toggleCategoryStatusAction,
 } from '@/lib/actions/menu';
+import { useLanguage } from '@/lib/i18n/context';
 
 interface CategoryRecord {
   id: string;
@@ -25,6 +26,8 @@ export default function AdminCategoriesManager({
 }: {
   initialCategories: CategoryRecord[];
 }) {
+  const { dict, translateCategory } = useLanguage();
+
   const [categories, setCategories] = useState<CategoryRecord[]>(initialCategories);
   const [modalOpen, setModalOpen] = useState(false);
   const [editingCategory, setEditingCategory] = useState<CategoryRecord | null>(null);
@@ -109,11 +112,23 @@ export default function AdminCategoriesManager({
 
   return (
     <div className="space-y-4">
+      {/* Header */}
+      <div>
+        <h1 className="text-xl font-semibold text-[#F5F0EB]">
+          {dict.categoriesPageTitle}
+        </h1>
+        <p className="text-xs text-[#9E958C]">
+          {dict.categoriesPageSubtitle}
+        </p>
+      </div>
+
       <div className="flex items-center justify-between bg-[#1E1A17] border border-[#2E2824] rounded-2xl p-4 shadow-xs">
         <div>
-          <h2 className="text-sm font-semibold text-[#F5F0EB]">Menu categories</h2>
+          <h2 className="text-sm font-semibold text-[#F5F0EB]">
+            {dict.categoriesPageTitle}
+          </h2>
           <p className="text-xs text-[#9E958C]">
-            Organize products into customer-facing menu sections.
+            {dict.categoriesPageSubtitle}
           </p>
         </div>
 
@@ -123,7 +138,7 @@ export default function AdminCategoriesManager({
           className="inline-flex items-center gap-1.5 bg-[#10B981] hover:bg-[#059669] text-[#141210] text-xs font-semibold px-4 py-2.5 rounded-xl transition-colors cursor-pointer shadow-xs"
         >
           <Plus className="w-4 h-4" />
-          <span>Add category</span>
+          <span>{dict.addCategoryBtn}</span>
         </button>
       </div>
 
@@ -132,17 +147,18 @@ export default function AdminCategoriesManager({
           <table className="w-full text-left text-xs">
             <thead className="bg-[#241F1C] text-[#9E958C] border-b border-[#2E2824]">
               <tr>
-                <th className="px-4 py-3 font-medium">Order</th>
-                <th className="px-4 py-3 font-medium">Category name</th>
-                <th className="px-4 py-3 font-medium">Slug</th>
-                <th className="px-4 py-3 font-medium">Active products</th>
-                <th className="px-4 py-3 font-medium">Status</th>
-                <th className="px-4 py-3 font-medium text-right">Actions</th>
+                <th className="px-4 py-3 font-medium">{dict.thOrder}</th>
+                <th className="px-4 py-3 font-medium">{dict.thCategoryName}</th>
+                <th className="px-4 py-3 font-medium">{dict.thSlug}</th>
+                <th className="px-4 py-3 font-medium">{dict.thActiveProducts}</th>
+                <th className="px-4 py-3 font-medium">{dict.thStatus}</th>
+                <th className="px-4 py-3 font-medium text-right">{dict.thActions}</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-[#24201D]">
               {categories.map((cat) => {
                 const isToggling = togglingId === cat.id;
+                const localized = translateCategory(cat.slug, cat.name, cat.description);
 
                 return (
                   <tr key={cat.id} className="hover:bg-[#241F1C]/50 transition-colors">
@@ -152,11 +168,11 @@ export default function AdminCategoriesManager({
                     <td className="px-4 py-3">
                       <div className="space-y-0.5">
                         <span className="font-medium text-[#F5F0EB] block">
-                          {cat.name}
+                          {localized.name}
                         </span>
-                        {cat.description && (
+                        {localized.description && (
                           <span className="text-[11px] text-[#9E958C] block max-w-sm truncate">
-                            {cat.description}
+                            {localized.description}
                           </span>
                         )}
                       </div>
@@ -179,7 +195,7 @@ export default function AdminCategoriesManager({
                         {isToggling ? (
                           <Loader2 className="w-3 h-3 animate-spin" />
                         ) : null}
-                        <span>{cat.isActive ? 'Active' : 'Inactive'}</span>
+                        <span>{cat.isActive ? dict.statusActive : dict.statusInactive}</span>
                       </button>
                     </td>
                     <td className="px-4 py-3 text-right">
@@ -187,7 +203,7 @@ export default function AdminCategoriesManager({
                         type="button"
                         onClick={() => openEditModal(cat)}
                         className="p-1.5 text-[#9E958C] hover:text-[#F5F0EB] rounded-xl hover:bg-[#241F1C] transition-colors cursor-pointer"
-                        title="Edit category"
+                        title={dict.editCategory}
                       >
                         <Edit2 className="w-3.5 h-3.5" />
                       </button>
@@ -206,7 +222,7 @@ export default function AdminCategoriesManager({
           <div className="bg-[#1E1A17] w-full max-w-md rounded-2xl shadow-2xl overflow-hidden flex flex-col border border-[#2E2824]">
             <div className="px-5 py-4 bg-[#241F1C] border-b border-[#2E2824] flex items-center justify-between">
               <h3 className="text-sm font-semibold text-[#F5F0EB]">
-                {editingCategory ? 'Edit category' : 'Create category'}
+                {editingCategory ? dict.editCategoryModalTitle : dict.createCategoryModalTitle}
               </h3>
               <button
                 type="button"
@@ -227,7 +243,7 @@ export default function AdminCategoriesManager({
             <form onSubmit={handleSubmit} className="p-5 space-y-3.5">
               <div className="space-y-1">
                 <label className="text-xs font-medium text-[#F5F0EB] block">
-                  Category name
+                  {dict.categoryNameField}
                 </label>
                 <input
                   type="text"
@@ -241,7 +257,7 @@ export default function AdminCategoriesManager({
 
               <div className="space-y-1">
                 <label className="text-xs font-medium text-[#F5F0EB] block">
-                  Slug (URL-friendly)
+                  {dict.categorySlugField}
                 </label>
                 <input
                   type="text"
@@ -255,7 +271,7 @@ export default function AdminCategoriesManager({
 
               <div className="space-y-1">
                 <label className="text-xs font-medium text-[#F5F0EB] block">
-                  Display order
+                  {dict.displayOrderField}
                 </label>
                 <input
                   type="number"
@@ -268,7 +284,7 @@ export default function AdminCategoriesManager({
 
               <div className="space-y-1">
                 <label className="text-xs font-medium text-[#F5F0EB] block">
-                  Description
+                  {dict.descriptionField}
                 </label>
                 <textarea
                   name="description"
@@ -288,7 +304,7 @@ export default function AdminCategoriesManager({
                   className="rounded border-[#2E2824] text-[#10B981] focus:ring-[#10B981] bg-[#241F1C]"
                 />
                 <label htmlFor="isActive" className="text-xs text-[#F5F0EB] cursor-pointer">
-                  Active and visible on the customer menu
+                  {dict.categoryActiveCheckbox}
                 </label>
               </div>
 
@@ -298,7 +314,7 @@ export default function AdminCategoriesManager({
                   onClick={() => setModalOpen(false)}
                   className="px-3.5 py-2 border border-[#2E2824] hover:bg-[#241F1C] text-[#9E958C] hover:text-[#F5F0EB] rounded-xl text-xs transition-colors cursor-pointer"
                 >
-                  Cancel
+                  {dict.cancelBtn}
                 </button>
                 <button
                   type="submit"
@@ -308,10 +324,10 @@ export default function AdminCategoriesManager({
                   {isSubmitting ? (
                     <>
                       <Loader2 className="w-3.5 h-3.5 animate-spin" />
-                      <span>Saving...</span>
+                      <span>{dict.savingCategory}</span>
                     </>
                   ) : (
-                    <span>Save category</span>
+                    <span>{dict.saveCategory}</span>
                   )}
                 </button>
               </div>

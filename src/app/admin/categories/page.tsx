@@ -19,16 +19,5 @@ export default async function AdminCategoriesPage() {
     },
   });
 
-  return (
-    <div className="space-y-4">
-      <div>
-        <h1 className="text-xl font-semibold text-[#F5F0EB]">Menu categories</h1>
-        <p className="text-xs text-[#9E958C]">
-          Manage and organize categories shown on the customer digital menu.
-        </p>
-      </div>
-
-      <AdminCategoriesManager initialCategories={categories} />
-    </div>
-  );
+  return <AdminCategoriesManager initialCategories={categories} />;
 }

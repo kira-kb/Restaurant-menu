@@ -23,20 +23,11 @@ export default async function AdminAuditPage() {
   ]);
 
   return (
-    <div className="space-y-4">
-      <div>
-        <h1 className="text-xl font-semibold text-[#F5F0EB]">Barista audit & operations</h1>
-        <p className="text-xs text-[#9E958C]">
-          Inspect today&apos;s barista drink preparation, counter payments collected, and full paginated audit history.
-        </p>
-      </div>
-
-      <AdminAuditManager
-        todaysData={todaysData}
-        historicalEvents={historicalEvents}
-        staffList={staffList}
-        currency={settings.currency}
-      />
-    </div>
+    <AdminAuditManager
+      todaysData={todaysData}
+      historicalEvents={historicalEvents}
+      staffList={staffList}
+      currency={settings.currency}
+    />
   );
 }

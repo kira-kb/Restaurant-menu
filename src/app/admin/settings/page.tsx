@@ -12,16 +12,5 @@ export const dynamic = 'force-dynamic';
 export default async function AdminSettingsPage() {
   const settings = await getPublicShopSettings();
 
-  return (
-    <div className="space-y-4">
-      <div>
-        <h1 className="text-xl font-medium text-[#F5F0EB]">Cafe settings</h1>
-        <p className="text-xs text-[#9E958C]">
-          Configure shop name, location details, currency, and printed receipt footer.
-        </p>
-      </div>
-
-      <AdminSettingsForm initialSettings={settings} />
-    </div>
-  );
+  return <AdminSettingsForm initialSettings={settings} />;
 }

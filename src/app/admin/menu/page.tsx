@@ -30,7 +30,11 @@ export default async function AdminMenuPage() {
   const formattedItems = items.map((i) => ({
     id: i.id,
     name: i.name,
+    nameAm: i.nameAm,
+    nameEn: i.nameEn,
     description: i.description,
+    descriptionAm: i.descriptionAm,
+    descriptionEn: i.descriptionEn,
     price: Number(i.price),
     imageUrl: i.imageUrl,
     isAvailable: i.isAvailable,
@@ -39,19 +43,10 @@ export default async function AdminMenuPage() {
   }));
 
   return (
-    <div className="space-y-4">
-      <div>
-        <h1 className="text-xl font-semibold text-[#F5F0EB]">Menu management</h1>
-        <p className="text-xs text-[#9E958C]">
-          Add coffees, update seasonal roast prices, or toggle daily availability.
-        </p>
-      </div>
-
-      <AdminMenuManager
-        initialItems={formattedItems}
-        categories={categories}
-        currency={settings.currency}
-      />
-    </div>
+    <AdminMenuManager
+      initialItems={formattedItems}
+      categories={categories}
+      currency={settings.currency}
+    />
   );
 }
