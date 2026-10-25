@@ -1,6 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getSessionFinancialSummary, closeTableSession } from '@/lib/payments';
 
+export const dynamic = 'force-dynamic';
+
 export async function GET(
   _req: NextRequest,
   props: { params: Promise<{ id: string }> }

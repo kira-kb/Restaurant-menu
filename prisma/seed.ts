@@ -90,39 +90,29 @@ async function main() {
   });
   console.log(`✓ Barista account created/updated: ${baristaUser.email} (Role: ${baristaUser.role})`);
 
-  // 4. Categories
+  // 4. Categories (Scraped from https://magenta-cat-894924.netlify.app/)
   const categoryData = [
     {
-      name: 'Hot Coffees',
-      slug: 'hot-coffees',
-      description: 'Handcrafted espresso beverages and pour-overs using Ethiopian highland beans.',
+      name: 'ልዩ ቁርሶች',
+      slug: 'special-breakfasts',
+      description: 'ጣፋጭ እና ባህላዊ የቁርስ አማራጮች',
       displayOrder: 1,
     },
     {
-      name: 'Cold Brews & Iced',
-      slug: 'cold-brews-iced',
-      description: 'Slow-steeped 16-hour single-origin cold brews and refreshing chilled coffees.',
+      name: 'ትኩስ መጠጦች',
+      slug: 'hot-drinks',
+      description: 'ጥሩ መዓዛ ያላቸው ትኩስ የቡና፣ የሻይ እና የወተት መጠጦች',
       displayOrder: 2,
     },
-    {
-      name: 'Signature Specialty',
-      slug: 'signature-specialty',
-      description: 'Exclusive house creations infused with native Ethiopian spices and botanical extracts.',
-      displayOrder: 3,
-    },
-    {
-      name: 'Pastries & Bakery',
-      slug: 'pastries-bakery',
-      description: 'Artisan baked goods, flaky croissants, and spiced brioche prepared daily.',
-      displayOrder: 4,
-    },
-    {
-      name: 'Teas & Refreshers',
-      slug: 'teas-refreshers',
-      description: 'Loose leaf herbal infusions, cascara coffee-cherry teas, and botanical refreshers.',
-      displayOrder: 5,
-    },
   ];
+
+  // Deactivate any legacy categories so only current scraped categories appear active
+  await prisma.category.updateMany({
+    where: {
+      slug: { notIn: categoryData.map((c) => c.slug) },
+    },
+    data: { isActive: false },
+  });
 
   const categoryMap = new Map<string, string>();
   for (const cat of categoryData) {
@@ -146,143 +136,65 @@ async function main() {
   }
   console.log(`✓ ${categoryMap.size} categories seeded`);
 
-  // 5. Menu Items (with authentic Ethiopian specialty offerings and ETB pricing)
+  // 5. Menu Items (Scraped from https://magenta-cat-894924.netlify.app/)
   const menuItems = [
-    // Hot Coffees
+    // 🍽️ ልዩ ቁርሶች
     {
-      categorySlug: 'hot-coffees',
-      name: 'Yirgacheffe Single-Origin Pour-Over',
-      description: 'Washed G1 beans from Gedeb, Yirgacheffe. Delicate floral jasmine notes with bright bergamot and lemon zest finish.',
-      price: 190.0,
-      imageUrl: 'https://images.unsplash.com/photo-1514432324607-a09d9b4aefdd?auto=format&fit=crop&w=600&q=80',
-      isAvailable: true,
-    },
-    {
-      categorySlug: 'hot-coffees',
-      name: 'Sidama Natural Espresso',
-      description: 'Sun-dried high altitude Heirloom cultivar. Velvety crema with rich notes of wild blueberry jam and dark 80% cocoa.',
-      price: 130.0,
-      imageUrl: 'https://images.unsplash.com/photo-1510591509098-f4fdc6d0ff04?auto=format&fit=crop&w=600&q=80',
-      isAvailable: true,
-    },
-    {
-      categorySlug: 'hot-coffees',
-      name: 'Traditional Ethiopian Macchiato',
-      description: 'The iconic Addis Ababa layered macchiato. Double ristretto with velvety steamed milk foam in a clear glass.',
+      categorySlug: 'special-breakfasts',
+      name: 'ቆጮ/እርጥብ',
+      description: 'በልዩ ቅቤ እና በርበሬ የተዘጋጀ',
       price: 150.0,
-      imageUrl: 'https://images.unsplash.com/photo-1557006021-b85fad4bc732?auto=format&fit=crop&w=600&q=80',
+      imageUrl: 'https://images.unsplash.com/photo-1541518763669-27fef04b14ea?auto=format&fit=crop&w=600&q=80',
       isAvailable: true,
     },
     {
-      categorySlug: 'hot-coffees',
-      name: 'Artisan Flat White',
-      description: 'Double shot of Guji honey-processed espresso folded seamlessly into glossy microfoam milk.',
-      price: 170.0,
-      imageUrl: 'https://images.unsplash.com/photo-1577968897966-3d4325b36b61?auto=format&fit=crop&w=600&q=80',
-      isAvailable: true,
-    },
-    {
-      categorySlug: 'hot-coffees',
-      name: 'Spanish Cortado',
-      description: 'Equal parts dense espresso and warm textured milk for an intense, balanced coffee kick.',
-      price: 160.0,
-      imageUrl: 'https://images.unsplash.com/photo-1534778101976-62847782c213?auto=format&fit=crop&w=600&q=80',
-      isAvailable: true,
-    },
-
-    // Cold Brews & Iced
-    {
-      categorySlug: 'cold-brews-iced',
-      name: 'Honey-Process Guji Cold Brew',
-      description: 'Steeped for 18 hours in cold filtered spring water. Naturally sweet with crisp white peach and elderflower notes.',
-      price: 220.0,
-      imageUrl: 'https://images.unsplash.com/photo-1517701550927-30cf4ba1dba5?auto=format&fit=crop&w=600&q=80',
-      isAvailable: true,
-    },
-    {
-      categorySlug: 'cold-brews-iced',
-      name: 'Iced Barch Spanish Latte',
-      description: 'Slow-pulled double espresso poured over chilled whole milk, condensed milk drizzle, and clear ice blocks.',
-      price: 240.0,
-      imageUrl: 'https://images.unsplash.com/photo-1461023058943-07fcbe16d735?auto=format&fit=crop&w=600&q=80',
-      isAvailable: true,
-    },
-    {
-      categorySlug: 'cold-brews-iced',
-      name: 'Vanilla Sweet Cream Cold Brew',
-      description: 'Single-origin iced brew crowned with house-whipped Madagascar vanilla bean sweet cream.',
-      price: 230.0,
-      imageUrl: 'https://images.unsplash.com/photo-1541167760496-1628856ab772?auto=format&fit=crop&w=600&q=80',
-      isAvailable: true,
-    },
-
-    // Signature Specialty
-    {
-      categorySlug: 'signature-specialty',
-      name: 'Cardamom Shakerato',
-      description: 'Fresh espresso vigorously shaken over ice with house-infused green cardamom syrup and candied orange peel twist.',
-      price: 250.0,
-      imageUrl: 'https://images.unsplash.com/photo-1517256064527-09c73fc73e38?auto=format&fit=crop&w=600&q=80',
-      isAvailable: true,
-    },
-    {
-      categorySlug: 'signature-specialty',
-      name: 'Barch Korerima Mocha',
-      description: 'Rich dark artisan chocolate blended with double espresso and a subtle aromatic pinch of Ethiopian black cardamom.',
-      price: 260.0,
-      imageUrl: 'https://images.unsplash.com/photo-1578314675249-a6910f80cc4e?auto=format&fit=crop&w=600&q=80',
-      isAvailable: true,
-    },
-    {
-      categorySlug: 'signature-specialty',
-      name: 'Cascara Sparkling Spritz',
-      description: 'Cold-extracted dried coffee-cherry tea blended with sparkling soda, fresh mint, and lime twist.',
-      price: 200.0,
-      imageUrl: 'https://images.unsplash.com/photo-1556881286-fc6915169721?auto=format&fit=crop&w=600&q=80',
-      isAvailable: true,
-    },
-
-    // Pastries & Bakery
-    {
-      categorySlug: 'pastries-bakery',
-      name: 'Freshly Baked Cardamom Brioche',
-      description: 'Soft golden braided butter brioche studded with freshly crushed cardamom seeds and pearl sugar crystals.',
-      price: 140.0,
+      categorySlug: 'special-breakfasts',
+      name: 'ጨጨብሳ',
+      description: 'ጣፋጭ እና ለስላሳ የቤት ውስጥ ጨጨብሳ',
+      price: 150.0,
       imageUrl: 'https://images.unsplash.com/photo-1509440159596-0249088772ff?auto=format&fit=crop&w=600&q=80',
       isAvailable: true,
     },
     {
-      categorySlug: 'pastries-bakery',
-      name: 'Almond Twice-Baked Croissant',
-      description: 'Crisp laminated French butter croissant filled with frangipane almond cream and toasted sliced almonds.',
-      price: 180.0,
-      imageUrl: 'https://images.unsplash.com/photo-1555507036-ab1f4038808a?auto=format&fit=crop&w=600&q=80',
-      isAvailable: true,
-    },
-    {
-      categorySlug: 'pastries-bakery',
-      name: 'Dark Chocolate Sea Salt Cookie',
-      description: 'Soft-baked Belgian dark chocolate chunk cookie with a pinch of flaky Lake Assal sea salt.',
-      price: 120.0,
-      imageUrl: 'https://images.unsplash.com/photo-1499636136210-6f4ee915583e?auto=format&fit=crop&w=600&q=80',
+      categorySlug: 'special-breakfasts',
+      name: 'ፋታ (ፍርፍር)',
+      description: 'በቀይ ሽንኩርት፣ ቅቤ እና ቅመማቅመም የተዘጋጀ',
+      price: 200.0,
+      imageUrl: 'https://images.unsplash.com/photo-1546069901-ba9599a7e63c?auto=format&fit=crop&w=600&q=80',
       isAvailable: true,
     },
 
-    // Teas & Refreshers
+    // ☕ ትኩስ መጠጦች
     {
-      categorySlug: 'teas-refreshers',
-      name: 'Hibiscus Mint Chilled Infusion',
-      description: 'Vibrant ruby herbal tea brewed from wild hibiscus calyces, fresh garden mint, and wildflower honey.',
-      price: 160.0,
+      categorySlug: 'hot-drinks',
+      name: 'ቡና',
+      description: 'ጥሩ መዓዛ ያለው የሀገራችን ባህላዊ ቡና',
+      price: 30.0,
+      imageUrl: 'https://images.unsplash.com/photo-1514432324607-a09d9b4aefdd?auto=format&fit=crop&w=600&q=80',
+      isAvailable: true,
+    },
+    {
+      categorySlug: 'hot-drinks',
+      name: 'ሻይ',
+      description: 'ትኩስ እና ጣፋጭ ሻይ',
+      price: 30.0,
       imageUrl: 'https://images.unsplash.com/photo-1576092768241-dec231879fc3?auto=format&fit=crop&w=600&q=80',
       isAvailable: true,
     },
     {
-      categorySlug: 'teas-refreshers',
-      name: 'Ginger Lemongrass Herbal Brew',
-      description: 'Warming pot of fresh crushed ginger root, wild highland lemongrass, and fresh lemon slices.',
-      price: 150.0,
-      imageUrl: 'https://images.unsplash.com/photo-1597481499750-3e6b22637e12?auto=format&fit=crop&w=600&q=80',
+      categorySlug: 'hot-drinks',
+      name: 'ወተት',
+      description: 'ትኩስ እና ጣፋጭ ወተት',
+      price: 50.0,
+      imageUrl: 'https://images.unsplash.com/photo-1550583724-b2692b85b150?auto=format&fit=crop&w=600&q=80',
+      isAvailable: true,
+    },
+    {
+      categorySlug: 'hot-drinks',
+      name: 'ልዩ የተጣራ ቡና (Pour-Over Coffee)',
+      description: 'የተመረጠ የይርጋጨፌ የተጣራ ቡና ከጣፋጭ የአበባ መዓዛ ጋር (Yirgacheffe Single-Origin Pour-Over)',
+      price: 60.0,
+      imageUrl: 'https://images.unsplash.com/photo-1514432324607-a09d9b4aefdd?auto=format&fit=crop&w=600&q=80',
       isAvailable: true,
     },
   ];

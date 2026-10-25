@@ -2,6 +2,8 @@ import { NextRequest, NextResponse } from 'next/server';
 import { updateOrderStatus } from '@/lib/orders';
 import { OrderStatus } from '@prisma/client';
 
+export const dynamic = 'force-dynamic';
+
 export async function POST(
   req: NextRequest,
   props: { params: Promise<{ id: string }> }
