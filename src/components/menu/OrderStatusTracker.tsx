@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useRef } from 'react';
 import Link from 'next/link';
 import {
   CheckCircle,
@@ -8,10 +8,17 @@ import {
   ChevronRight,
   AlertTriangle,
   ArrowLeft,
+  Volume2,
+  VolumeX,
 } from 'lucide-react';
 import { OrderStatus } from '@prisma/client';
 import { LanguageProvider, useLanguage } from '@/lib/i18n/context';
 import LanguageSwitcher from '@/components/ui/LanguageSwitcher';
+import {
+  useSoundPreference,
+  playOrderReadySound,
+  unlockAudio,
+} from '@/lib/audio/soundEffects';
 
 interface OrderItem {
   id: string;
@@ -44,11 +51,24 @@ function OrderStatusTrackerContent({
   const [order, setOrder] = useState<OrderDetails>(initialOrder);
   const { dict, formatCurrency, translateMenuItem } = useLanguage();
   const activeCurrency = formatCurrency(order.currency);
+  const prevStatusRef = useRef<OrderStatus>(initialOrder.status);
+  const [soundEnabled, setSoundEnabled] = useSoundPreference(
+    'customer_order_sound',
+    true
+  );
 
-  // Poll for real-time status updates every 4 seconds
+  const toggleSound = async () => {
+    const next = !soundEnabled;
+    setSoundEnabled(next);
+    if (next) {
+      await unlockAudio();
+      playOrderReadySound('customer_order_sound');
+    }
+  };
+
+  // Poll for real-time status updates every 3.5 seconds (continues in background)
   useEffect(() => {
     const poll = async () => {
-      if (document.hidden) return;
       if (order.status === 'COMPLETED' || order.status === 'CANCELLED') return;
 
       try {
@@ -56,6 +76,14 @@ function OrderStatusTrackerContent({
         if (res.ok) {
           const data = await res.json();
           if (data.success && data.order) {
+            const nextStatus = data.order.status as OrderStatus;
+            if (nextStatus !== prevStatusRef.current) {
+              prevStatusRef.current = nextStatus;
+              // Play chime only when order is READY or COMPLETED
+              if (nextStatus === 'READY' || nextStatus === 'COMPLETED') {
+                playOrderReadySound('customer_order_sound');
+              }
+            }
             setOrder(data.order);
           }
         }
@@ -64,8 +92,18 @@ function OrderStatusTrackerContent({
       }
     };
 
-    const intervalId = setInterval(poll, 4000);
-    return () => clearInterval(intervalId);
+    const intervalId = setInterval(poll, 3500);
+    const onVisibility = () => {
+      if (!document.hidden) {
+        poll();
+      }
+    };
+    document.addEventListener('visibilitychange', onVisibility);
+
+    return () => {
+      clearInterval(intervalId);
+      document.removeEventListener('visibilitychange', onVisibility);
+    };
   }, [order.id, order.status]);
 
   // Status step progression with translations
@@ -90,7 +128,29 @@ function OrderStatusTrackerContent({
           <ArrowLeft className="w-3.5 h-3.5" />
           <span>{dict.orderMoreItems}</span>
         </Link>
-        <LanguageSwitcher showIcon={false} />
+        <div className="flex items-center gap-2">
+          <button
+            suppressHydrationWarning
+            onClick={toggleSound}
+            className={`px-2 py-1.5 rounded-xl border text-xs transition-colors cursor-pointer flex items-center gap-1.5 ${
+              soundEnabled
+                ? 'border-[#10B981]/40 bg-[#10B981]/15 text-[#10B981] hover:bg-[#10B981]/25'
+                : 'border-[#2E2824] bg-[#1E1A17] text-[#7E756C] hover:text-[#F5F0EB]'
+            }`}
+            title={soundEnabled ? dict.soundOn : dict.soundMuted}
+            aria-label={soundEnabled ? dict.soundMuted : dict.soundOn}
+          >
+            {soundEnabled ? (
+              <Volume2 className="w-3.5 h-3.5" />
+            ) : (
+              <VolumeX className="w-3.5 h-3.5" />
+            )}
+            <span suppressHydrationWarning className="text-[10px] font-medium hidden xs:inline">
+              {soundEnabled ? dict.soundOn : dict.soundMuted}
+            </span>
+          </button>
+          <LanguageSwitcher showIcon={false} />
+        </div>
       </header>
 
       {/* Top Confirmation Header */}

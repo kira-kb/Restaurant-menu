@@ -10,6 +10,9 @@ export async function GET(
 ) {
   try {
     const { id } = await props.params;
+    if (!id || id === 'undefined') {
+      return NextResponse.json({ error: 'Order not found' }, { status: 404 });
+    }
     const order = await getPublicOrderStatus(id);
     if (!order) {
       return NextResponse.json({ error: 'Order not found' }, { status: 404 });

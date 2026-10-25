@@ -59,6 +59,10 @@ export const translations: Record<Language, TranslationDictionary> = {
     orderCancelledDesc: 'ይህ ትዕዛዝ ተሰርዟል። እባክዎ ለተጨማሪ መረጃ ባሪስታውን ያነጋግሩ።',
     itemsOrdered: 'የታዘዙ እቃዎች',
     orderMoreItems: 'ተጨማሪ እቃዎችን እዘዝ',
+    soundOn: 'ድምፅ በርቷል',
+    soundMuted: 'ድምፅ ጠፍቷል',
+    soundAlertsPrompt: 'የቀጥታ ትዕዛዝ ድምፅ ማሳወቂያን ያብሩ',
+    enableSound: 'ድምፅ አብራ',
 
     // Staff Portal - Common
     staffPortal: 'የሰራተኞች ክፍል',
@@ -372,6 +376,10 @@ export const translations: Record<Language, TranslationDictionary> = {
     orderCancelledDesc: 'This order was cancelled. Please speak with your barista for assistance.',
     itemsOrdered: 'Items ordered',
     orderMoreItems: 'Order more items',
+    soundOn: 'Sound Alerts On',
+    soundMuted: 'Sound Muted',
+    soundAlertsPrompt: 'Click to activate live order sound alerts',
+    enableSound: 'Enable Audio',
 
     // Staff Portal - Common
     staffPortal: 'Staff portal',

@@ -7,7 +7,11 @@ export async function POST(req: NextRequest) {
   try {
     const body = await req.json();
     const result = await createCustomerOrder(body);
-    return NextResponse.json({ success: true, order: result });
+    return NextResponse.json({
+      success: true,
+      orderId: result.orderId,
+      order: result,
+    });
   } catch (error: unknown) {
     console.error('Customer order creation error:', error);
     const message = error instanceof Error ? error.message : 'Failed to place order.';

@@ -1,25 +1,31 @@
-import { unstable_cache, revalidateTag, revalidatePath } from 'next/cache';
-import prisma from '@/lib/prisma';
-import { requireRole } from '@/lib/auth/session';
-import { Role, Prisma } from '@prisma/client';
-import { CategoryInputSchema, MenuItemInputSchema, MenuAddonInputSchema } from '@/lib/validations';
+import { unstable_cache, revalidateTag, revalidatePath } from "next/cache";
+import prisma from "@/lib/prisma";
+import { requireRole } from "@/lib/auth/session";
+import { Role, Prisma } from "@prisma/client";
+import {
+  CategoryInputSchema,
+  MenuItemInputSchema,
+  MenuAddonInputSchema,
+} from "@/lib/validations";
 
-export function serializeMenuItem<T extends {
-  id: string;
-  name: string;
-  nameAm?: string | null;
-  nameEn?: string | null;
-  description: string | null;
-  descriptionAm?: string | null;
-  descriptionEn?: string | null;
-  price: Prisma.Decimal | number;
-  imageUrl: string | null;
-  isAvailable: boolean;
-  isArchived: boolean;
-  categoryId: string;
-  createdAt?: Date;
-  updatedAt?: Date;
-}>(item: T) {
+export function serializeMenuItem<
+  T extends {
+    id: string;
+    name: string;
+    nameAm?: string | null;
+    nameEn?: string | null;
+    description: string | null;
+    descriptionAm?: string | null;
+    descriptionEn?: string | null;
+    price: Prisma.Decimal | number;
+    imageUrl: string | null;
+    isAvailable: boolean;
+    isArchived: boolean;
+    categoryId: string;
+    createdAt?: Date;
+    updatedAt?: Date;
+  },
+>(item: T) {
   return {
     id: item.id,
     name: item.name,
@@ -38,9 +44,9 @@ export function serializeMenuItem<T extends {
   };
 }
 
-export const MENU_CACHE_TAG = 'barch-menu';
-export const CATEGORIES_CACHE_TAG = 'barch-categories';
-export const SETTINGS_CACHE_TAG = 'barch-settings';
+export const MENU_CACHE_TAG = "barch-menu";
+export const CATEGORIES_CACHE_TAG = "barch-categories";
+export const SETTINGS_CACHE_TAG = "barch-settings";
 
 /**
  * Direct database query for public active menu data
@@ -48,11 +54,11 @@ export const SETTINGS_CACHE_TAG = 'barch-settings';
 export async function fetchPublicMenuData() {
   const categories = await prisma.category.findMany({
     where: { isActive: true },
-    orderBy: { displayOrder: 'asc' },
+    orderBy: { displayOrder: "asc" },
     include: {
       menuItems: {
         where: { isArchived: false },
-        orderBy: { name: 'asc' },
+        orderBy: { name: "asc" },
         include: {
           addons: {
             include: { addon: true },
@@ -98,7 +104,9 @@ export async function fetchPublicMenuData() {
           icon: a.addon.icon,
         })),
       recommendations: item.recommendations
-        .filter((r) => !r.recommendedItem.isArchived && r.recommendedItem.isAvailable)
+        .filter(
+          (r) => !r.recommendedItem.isArchived && r.recommendedItem.isAvailable,
+        )
         .map((r) => ({
           id: r.recommendedItem.id,
           name: r.recommendedItem.name,
@@ -121,8 +129,8 @@ export async function fetchPublicMenuData() {
  */
 export const getPublicMenu = unstable_cache(
   fetchPublicMenuData,
-  ['public-menu-cache'],
-  { tags: [MENU_CACHE_TAG, CATEGORIES_CACHE_TAG], revalidate: 3600 }
+  ["public-menu-cache"],
+  { tags: [MENU_CACHE_TAG, CATEGORIES_CACHE_TAG], revalidate: 3600 },
 );
 
 /**
@@ -131,7 +139,7 @@ export const getPublicMenu = unstable_cache(
 export const getPublicShopSettings = unstable_cache(
   async () => {
     const settings = await prisma.shopSettings.findUnique({
-      where: { id: 'default' },
+      where: { id: "default" },
     });
 
     if (!settings) {
@@ -158,8 +166,8 @@ export const getPublicShopSettings = unstable_cache(
       taxRatePercent: Number(settings.taxRatePercent),
     };
   },
-  ['public-settings-cache'],
-  { tags: [SETTINGS_CACHE_TAG], revalidate: 3600 }
+  ["public-settings-cache"],
+  { tags: [SETTINGS_CACHE_TAG], revalidate: 3600 },
 );
 
 /* ========================================================================= */
@@ -169,7 +177,7 @@ export const getPublicShopSettings = unstable_cache(
 export async function getAdminCategories() {
   await requireRole([Role.ADMIN]);
   return prisma.category.findMany({
-    orderBy: { displayOrder: 'asc' },
+    orderBy: { displayOrder: "asc" },
     include: {
       _count: {
         select: { menuItems: { where: { isArchived: false } } },
@@ -182,21 +190,24 @@ export async function createCategoryAction(formData: FormData) {
   await requireRole([Role.ADMIN]);
 
   const rawData = {
-    name: formData.get('name'),
-    nameAm: formData.get('nameAm') || null,
-    nameEn: formData.get('nameEn') || null,
-    slug: formData.get('slug'),
-    description: formData.get('description') || null,
-    descriptionAm: formData.get('descriptionAm') || null,
-    descriptionEn: formData.get('descriptionEn') || null,
-    displayOrder: formData.get('displayOrder') || 0,
-    isActive: formData.get('isActive') === 'true' || formData.get('isActive') === 'on',
+    name: formData.get("name"),
+    nameAm: formData.get("nameAm") || null,
+    nameEn: formData.get("nameEn") || null,
+    slug: formData.get("slug"),
+    description: formData.get("description") || null,
+    descriptionAm: formData.get("descriptionAm") || null,
+    descriptionEn: formData.get("descriptionEn") || null,
+    displayOrder: formData.get("displayOrder") || 0,
+    isActive:
+      formData.get("isActive") === "true" || formData.get("isActive") === "on",
   };
 
   const validated = CategoryInputSchema.parse(rawData);
 
   // Check unique slug
-  const existing = await prisma.category.findUnique({ where: { slug: validated.slug } });
+  const existing = await prisma.category.findUnique({
+    where: { slug: validated.slug },
+  });
   if (existing) {
     throw new Error(`A category with slug "${validated.slug}" already exists.`);
   }
@@ -205,9 +216,9 @@ export async function createCategoryAction(formData: FormData) {
     data: validated,
   });
 
-  revalidateTag(CATEGORIES_CACHE_TAG, 'default');
-  revalidateTag(MENU_CACHE_TAG, 'default');
-  revalidatePath('/menu');
+  revalidateTag(CATEGORIES_CACHE_TAG, "default");
+  revalidateTag(MENU_CACHE_TAG, "default");
+  revalidatePath("/menu");
   return category;
 }
 
@@ -215,15 +226,16 @@ export async function updateCategoryAction(id: string, formData: FormData) {
   await requireRole([Role.ADMIN]);
 
   const rawData = {
-    name: formData.get('name'),
-    nameAm: formData.get('nameAm') || null,
-    nameEn: formData.get('nameEn') || null,
-    slug: formData.get('slug'),
-    description: formData.get('description') || null,
-    descriptionAm: formData.get('descriptionAm') || null,
-    descriptionEn: formData.get('descriptionEn') || null,
-    displayOrder: formData.get('displayOrder') || 0,
-    isActive: formData.get('isActive') === 'true' || formData.get('isActive') === 'on',
+    name: formData.get("name"),
+    nameAm: formData.get("nameAm") || null,
+    nameEn: formData.get("nameEn") || null,
+    slug: formData.get("slug"),
+    description: formData.get("description") || null,
+    descriptionAm: formData.get("descriptionAm") || null,
+    descriptionEn: formData.get("descriptionEn") || null,
+    displayOrder: formData.get("displayOrder") || 0,
+    isActive:
+      formData.get("isActive") === "true" || formData.get("isActive") === "on",
   };
 
   const validated = CategoryInputSchema.parse(rawData);
@@ -241,9 +253,9 @@ export async function updateCategoryAction(id: string, formData: FormData) {
     data: validated,
   });
 
-  revalidateTag(CATEGORIES_CACHE_TAG, 'default');
-  revalidateTag(MENU_CACHE_TAG, 'default');
-  revalidatePath('/menu');
+  revalidateTag(CATEGORIES_CACHE_TAG, "default");
+  revalidateTag(MENU_CACHE_TAG, "default");
+  revalidatePath("/menu");
   return updated;
 }
 
@@ -256,9 +268,9 @@ export async function toggleCategoryStatusAction(id: string) {
     data: { isActive: !category.isActive },
   });
 
-  revalidateTag(CATEGORIES_CACHE_TAG, 'default');
-  revalidateTag(MENU_CACHE_TAG, 'default');
-  revalidatePath('/menu');
+  revalidateTag(CATEGORIES_CACHE_TAG, "default");
+  revalidateTag(MENU_CACHE_TAG, "default");
+  revalidatePath("/menu");
   return updated;
 }
 
@@ -276,17 +288,17 @@ export async function getAdminMenuItems(search?: string, categoryId?: string) {
       ...(search
         ? {
             OR: [
-              { name: { contains: search, mode: 'insensitive' } },
-              { nameAm: { contains: search, mode: 'insensitive' } },
-              { nameEn: { contains: search, mode: 'insensitive' } },
-              { description: { contains: search, mode: 'insensitive' } },
-              { descriptionAm: { contains: search, mode: 'insensitive' } },
-              { descriptionEn: { contains: search, mode: 'insensitive' } },
+              { name: { contains: search, mode: "insensitive" } },
+              { nameAm: { contains: search, mode: "insensitive" } },
+              { nameEn: { contains: search, mode: "insensitive" } },
+              { description: { contains: search, mode: "insensitive" } },
+              { descriptionAm: { contains: search, mode: "insensitive" } },
+              { descriptionEn: { contains: search, mode: "insensitive" } },
             ],
           }
         : {}),
     },
-    orderBy: [{ category: { displayOrder: 'asc' } }, { name: 'asc' }],
+    orderBy: [{ category: { displayOrder: "asc" } }, { name: "asc" }],
     include: {
       category: { select: { id: true, name: true, slug: true } },
       addons: { select: { addonId: true } },
@@ -306,7 +318,11 @@ export async function getAdminMenuItems(search?: string, categoryId?: string) {
 
 function parseIdArray(formData: FormData, fieldName: string): string[] {
   const rawValues = formData.getAll(fieldName);
-  if (rawValues.length === 1 && typeof rawValues[0] === 'string' && rawValues[0].startsWith('[')) {
+  if (
+    rawValues.length === 1 &&
+    typeof rawValues[0] === "string" &&
+    rawValues[0].startsWith("[")
+  ) {
     try {
       const parsed = JSON.parse(rawValues[0]);
       if (Array.isArray(parsed)) return parsed.map(String).filter(Boolean);
@@ -321,21 +337,23 @@ export async function createMenuItemAction(formData: FormData) {
   await requireRole([Role.ADMIN]);
 
   const rawData = {
-    name: formData.get('name'),
-    nameAm: formData.get('nameAm') || null,
-    nameEn: formData.get('nameEn') || null,
-    description: formData.get('description') || null,
-    descriptionAm: formData.get('descriptionAm') || null,
-    descriptionEn: formData.get('descriptionEn') || null,
-    price: formData.get('price'),
-    categoryId: formData.get('categoryId'),
-    imageUrl: formData.get('imageUrl') || null,
-    isAvailable: formData.get('isAvailable') === 'true' || formData.get('isAvailable') === 'on',
+    name: formData.get("name"),
+    nameAm: formData.get("nameAm") || null,
+    nameEn: formData.get("nameEn") || null,
+    description: formData.get("description") || null,
+    descriptionAm: formData.get("descriptionAm") || null,
+    descriptionEn: formData.get("descriptionEn") || null,
+    price: formData.get("price"),
+    categoryId: formData.get("categoryId"),
+    imageUrl: formData.get("imageUrl") || null,
+    isAvailable:
+      formData.get("isAvailable") === "true" ||
+      formData.get("isAvailable") === "on",
   };
 
   const validated = MenuItemInputSchema.parse(rawData);
-  const addonIds = parseIdArray(formData, 'addonIds');
-  const recommendedItemIds = parseIdArray(formData, 'recommendedItemIds');
+  const addonIds = parseIdArray(formData, "addonIds");
+  const recommendedItemIds = parseIdArray(formData, "recommendedItemIds");
 
   const item = await prisma.menuItem.create({
     data: {
@@ -350,17 +368,25 @@ export async function createMenuItemAction(formData: FormData) {
       imageUrl: validated.imageUrl,
       isAvailable: validated.isAvailable,
       isArchived: false,
-      addons: addonIds.length > 0 ? {
-        create: addonIds.map((addonId) => ({ addonId })),
-      } : undefined,
-      recommendations: recommendedItemIds.length > 0 ? {
-        create: recommendedItemIds.map((recommendedItemId) => ({ recommendedItemId })),
-      } : undefined,
+      addons:
+        addonIds.length > 0
+          ? {
+              create: addonIds.map((addonId) => ({ addonId })),
+            }
+          : undefined,
+      recommendations:
+        recommendedItemIds.length > 0
+          ? {
+              create: recommendedItemIds.map((recommendedItemId) => ({
+                recommendedItemId,
+              })),
+            }
+          : undefined,
     },
   });
 
-  revalidateTag(MENU_CACHE_TAG, 'default');
-  revalidatePath('/menu');
+  revalidateTag(MENU_CACHE_TAG, "default");
+  revalidatePath("/menu");
   return serializeMenuItem(item);
 }
 
@@ -368,21 +394,23 @@ export async function updateMenuItemAction(id: string, formData: FormData) {
   await requireRole([Role.ADMIN]);
 
   const rawData = {
-    name: formData.get('name'),
-    nameAm: formData.get('nameAm') || null,
-    nameEn: formData.get('nameEn') || null,
-    description: formData.get('description') || null,
-    descriptionAm: formData.get('descriptionAm') || null,
-    descriptionEn: formData.get('descriptionEn') || null,
-    price: formData.get('price'),
-    categoryId: formData.get('categoryId'),
-    imageUrl: formData.get('imageUrl') || null,
-    isAvailable: formData.get('isAvailable') === 'true' || formData.get('isAvailable') === 'on',
+    name: formData.get("name"),
+    nameAm: formData.get("nameAm") || null,
+    nameEn: formData.get("nameEn") || null,
+    description: formData.get("description") || null,
+    descriptionAm: formData.get("descriptionAm") || null,
+    descriptionEn: formData.get("descriptionEn") || null,
+    price: formData.get("price"),
+    categoryId: formData.get("categoryId"),
+    imageUrl: formData.get("imageUrl") || null,
+    isAvailable:
+      formData.get("isAvailable") === "true" ||
+      formData.get("isAvailable") === "on",
   };
 
   const validated = MenuItemInputSchema.parse(rawData);
-  const addonIds = parseIdArray(formData, 'addonIds');
-  const recommendedItemIds = parseIdArray(formData, 'recommendedItemIds');
+  const addonIds = parseIdArray(formData, "addonIds");
+  const recommendedItemIds = parseIdArray(formData, "recommendedItemIds");
 
   const updated = await prisma.$transaction(async (tx) => {
     // Sync addons
@@ -397,7 +425,10 @@ export async function updateMenuItemAction(id: string, formData: FormData) {
     await tx.menuItemRecommendation.deleteMany({ where: { menuItemId: id } });
     if (recommendedItemIds.length > 0) {
       await tx.menuItemRecommendation.createMany({
-        data: recommendedItemIds.map((recId) => ({ menuItemId: id, recommendedItemId: recId })),
+        data: recommendedItemIds.map((recId) => ({
+          menuItemId: id,
+          recommendedItemId: recId,
+        })),
       });
     }
 
@@ -418,8 +449,8 @@ export async function updateMenuItemAction(id: string, formData: FormData) {
     });
   });
 
-  revalidateTag(MENU_CACHE_TAG, 'default');
-  revalidatePath('/menu');
+  revalidateTag(MENU_CACHE_TAG, "default");
+  revalidatePath("/menu");
   return serializeMenuItem(updated);
 }
 
@@ -432,8 +463,8 @@ export async function toggleMenuItemAvailabilityAction(id: string) {
     data: { isAvailable: !item.isAvailable },
   });
 
-  revalidateTag(MENU_CACHE_TAG, 'default');
-  revalidatePath('/menu');
+  revalidateTag(MENU_CACHE_TAG, "default");
+  revalidatePath("/menu");
   return serializeMenuItem(updated);
 }
 
@@ -446,22 +477,26 @@ export async function archiveMenuItemAction(id: string) {
     data: { isArchived: true, isAvailable: false },
   });
 
-  revalidateTag(MENU_CACHE_TAG, 'default');
-  revalidatePath('/menu');
+  revalidateTag(MENU_CACHE_TAG, "default");
+  revalidatePath("/menu");
   return serializeMenuItem(updated);
 }
 
-export async function updateMenuItemImageLinkAction(id: string, imageUrl: string | null) {
+export async function updateMenuItemImageLinkAction(
+  id: string,
+  imageUrl: string | null,
+) {
   await requireRole([Role.ADMIN]);
 
-  const cleanUrl = imageUrl && imageUrl.trim().length > 0 ? imageUrl.trim() : null;
+  const cleanUrl =
+    imageUrl && imageUrl.trim().length > 0 ? imageUrl.trim() : null;
   const updated = await prisma.menuItem.update({
     where: { id },
     data: { imageUrl: cleanUrl },
   });
 
-  revalidateTag(MENU_CACHE_TAG, 'default');
-  revalidatePath('/menu');
+  revalidateTag(MENU_CACHE_TAG, "default");
+  revalidatePath("/menu");
   return serializeMenuItem(updated);
 }
 
@@ -474,7 +509,7 @@ export async function getAdminAddons() {
 
   const addons = await prisma.menuAddon.findMany({
     where: { isArchived: false },
-    orderBy: [{ displayOrder: 'asc' }, { name: 'asc' }],
+    orderBy: [{ displayOrder: "asc" }, { name: "asc" }],
     include: {
       _count: {
         select: { menuItems: true },
@@ -501,13 +536,15 @@ export async function createAddonAction(formData: FormData) {
   await requireRole([Role.ADMIN]);
 
   const rawData = {
-    name: formData.get('name'),
-    nameAm: formData.get('nameAm') || null,
-    nameEn: formData.get('nameEn') || null,
-    price: formData.get('price') || 0,
-    icon: formData.get('icon') || null,
-    displayOrder: formData.get('displayOrder') || 0,
-    isAvailable: formData.get('isAvailable') === 'true' || formData.get('isAvailable') === 'on',
+    name: formData.get("name"),
+    nameAm: formData.get("nameAm") || null,
+    nameEn: formData.get("nameEn") || null,
+    price: formData.get("price") || 0,
+    icon: formData.get("icon") || null,
+    displayOrder: formData.get("displayOrder") || 0,
+    isAvailable:
+      formData.get("isAvailable") === "true" ||
+      formData.get("isAvailable") === "on",
   };
 
   const validated = MenuAddonInputSchema.parse(rawData);
@@ -525,8 +562,8 @@ export async function createAddonAction(formData: FormData) {
     },
   });
 
-  revalidateTag(MENU_CACHE_TAG, 'default');
-  revalidatePath('/menu');
+  revalidateTag(MENU_CACHE_TAG, "default");
+  revalidatePath("/menu");
   return {
     ...addon,
     price: Number(addon.price),
@@ -537,13 +574,15 @@ export async function updateAddonAction(id: string, formData: FormData) {
   await requireRole([Role.ADMIN]);
 
   const rawData = {
-    name: formData.get('name'),
-    nameAm: formData.get('nameAm') || null,
-    nameEn: formData.get('nameEn') || null,
-    price: formData.get('price') || 0,
-    icon: formData.get('icon') || null,
-    displayOrder: formData.get('displayOrder') || 0,
-    isAvailable: formData.get('isAvailable') === 'true' || formData.get('isAvailable') === 'on',
+    name: formData.get("name"),
+    nameAm: formData.get("nameAm") || null,
+    nameEn: formData.get("nameEn") || null,
+    price: formData.get("price") || 0,
+    icon: formData.get("icon") || null,
+    displayOrder: formData.get("displayOrder") || 0,
+    isAvailable:
+      formData.get("isAvailable") === "true" ||
+      formData.get("isAvailable") === "on",
   };
 
   const validated = MenuAddonInputSchema.parse(rawData);
@@ -561,8 +600,8 @@ export async function updateAddonAction(id: string, formData: FormData) {
     },
   });
 
-  revalidateTag(MENU_CACHE_TAG, 'default');
-  revalidatePath('/menu');
+  revalidateTag(MENU_CACHE_TAG, "default");
+  revalidatePath("/menu");
   return {
     ...updated,
     price: Number(updated.price),
@@ -578,8 +617,8 @@ export async function toggleAddonAvailabilityAction(id: string) {
     data: { isAvailable: !addon.isAvailable },
   });
 
-  revalidateTag(MENU_CACHE_TAG, 'default');
-  revalidatePath('/menu');
+  revalidateTag(MENU_CACHE_TAG, "default");
+  revalidatePath("/menu");
   return {
     ...updated,
     price: Number(updated.price),
@@ -594,8 +633,8 @@ export async function archiveAddonAction(id: string) {
     data: { isArchived: true, isAvailable: false },
   });
 
-  revalidateTag(MENU_CACHE_TAG, 'default');
-  revalidatePath('/menu');
+  revalidateTag(MENU_CACHE_TAG, "default");
+  revalidatePath("/menu");
   return {
     ...updated,
     price: Number(updated.price),

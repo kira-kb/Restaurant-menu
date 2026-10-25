@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect, useMemo, useCallback } from 'react';
+import React, { useState, useEffect, useMemo, useCallback, useRef } from 'react';
 import {
   Coffee,
   CheckCircle,
@@ -15,10 +15,18 @@ import {
   Lock,
   ChevronLeft,
   ChevronRight,
+  Volume2,
+  VolumeX,
 } from 'lucide-react';
 import ReceiptModal, { ReceiptData } from '@/components/receipt/ReceiptModal';
 import { OrderStatus } from '@prisma/client';
 import { useLanguage } from '@/lib/i18n/context';
+import {
+  useSoundPreference,
+  playNewOrderSound,
+  unlockAudio,
+  isAudioUnlocked,
+} from '@/lib/audio/soundEffects';
 
 interface OrderItem {
   id: string;
@@ -72,6 +80,48 @@ export default function BaristaOrderQueue({
   const [statusFilter, setStatusFilter] = useState<string>('active');
   const [tableFilter, setTableFilter] = useState<string>('all');
   const [searchQuery, setSearchQuery] = useState<string>('');
+  const [mounted, setMounted] = useState<boolean>(false);
+  const [audioReady, setAudioReady] = useState<boolean>(false);
+  const [soundEnabled, setSoundEnabled] = useSoundPreference(
+    'barista_queue_sound',
+    true
+  );
+
+  useEffect(() => {
+    setMounted(true);
+    setAudioReady(isAudioUnlocked());
+    const onUserInteract = () => {
+      unlockAudio();
+      setAudioReady(true);
+    };
+    window.addEventListener('click', onUserInteract);
+    window.addEventListener('touchstart', onUserInteract);
+    return () => {
+      window.removeEventListener('click', onUserInteract);
+      window.removeEventListener('touchstart', onUserInteract);
+    };
+  }, []);
+
+  const toggleSound = async () => {
+    const next = !soundEnabled;
+    setSoundEnabled(next);
+    if (next) {
+      await unlockAudio();
+      setAudioReady(true);
+      playNewOrderSound('barista_queue_sound');
+    }
+  };
+
+  const prevOrdersRef = useRef<
+    Map<string, { status: OrderStatus; itemsCount: number; total: number }>
+  >(
+    new Map(
+      initialOrders.map((o) => [
+        o.id,
+        { status: o.status, itemsCount: o.items.length, total: o.total },
+      ])
+    )
+  );
 
   // Per-order action loading states: maps orderId -> 'accept' | 'complete' | 'payment' | 'close'
   const [loadingActions, setLoadingActions] = useState<Record<string, string>>({});
@@ -80,15 +130,45 @@ export default function BaristaOrderQueue({
   // Modals state
   const [receiptData, setReceiptData] = useState<ReceiptData | null>(null);
 
-  // Polling logic to fetch fresh orders
+  // Polling logic to fetch fresh orders (continues in background tabs)
   const fetchOrders = useCallback(async () => {
-    if (document.hidden) return;
     try {
       const res = await fetch('/api/barista/orders');
       if (res.ok) {
         const data = await res.json();
         if (data.orders) {
-          setOrders(data.orders);
+          const freshOrders: OrderData[] = data.orders;
+          const prevMap = prevOrdersRef.current;
+
+          let hasNewOrder = false;
+
+          for (const ord of freshOrders) {
+            const prev = prevMap.get(ord.id);
+            if (!prev) {
+              // Brand new order arrived
+              hasNewOrder = true;
+            } else if (
+              ord.items.length > prev.itemsCount ||
+              ord.total > prev.total
+            ) {
+              // Existing table added items to active session
+              hasNewOrder = true;
+            }
+          }
+
+          // Sound triggers strictly when a new order appears
+          if (hasNewOrder) {
+            playNewOrderSound('barista_queue_sound');
+          }
+
+          prevOrdersRef.current = new Map(
+            freshOrders.map((o) => [
+              o.id,
+              { status: o.status, itemsCount: o.items.length, total: o.total },
+            ])
+          );
+
+          setOrders(freshOrders);
         }
       }
     } catch (err) {
@@ -97,8 +177,17 @@ export default function BaristaOrderQueue({
   }, []);
 
   useEffect(() => {
-    const interval = setInterval(fetchOrders, 4000);
-    return () => clearInterval(interval);
+    const interval = setInterval(fetchOrders, 3500);
+    const onVisibility = () => {
+      if (!document.hidden) {
+        fetchOrders();
+      }
+    };
+    document.addEventListener('visibilitychange', onVisibility);
+    return () => {
+      clearInterval(interval);
+      document.removeEventListener('visibilitychange', onVisibility);
+    };
   }, [fetchOrders]);
 
   const handleManualRefresh = async () => {
@@ -414,6 +503,27 @@ export default function BaristaOrderQueue({
             </select>
 
             <button
+              suppressHydrationWarning
+              onClick={toggleSound}
+              className={`px-2.5 py-1.5 border rounded-xl transition-colors flex items-center gap-1.5 cursor-pointer text-xs ${
+                soundEnabled
+                  ? 'border-[#10B981]/40 bg-[#10B981]/15 text-[#10B981] hover:bg-[#10B981]/25'
+                  : 'border-[#2E2824] bg-[#241F1C] text-[#7E756C] hover:text-[#F5F0EB]'
+              }`}
+              title={soundEnabled ? dict.soundOn : dict.soundMuted}
+              aria-label={soundEnabled ? dict.soundMuted : dict.soundOn}
+            >
+              {soundEnabled ? (
+                <Volume2 className="w-3.5 h-3.5" />
+              ) : (
+                <VolumeX className="w-3.5 h-3.5" />
+              )}
+              <span suppressHydrationWarning className="hidden sm:inline text-[11px] font-medium">
+                {soundEnabled ? dict.soundOn : dict.soundMuted}
+              </span>
+            </button>
+
+            <button
               onClick={handleManualRefresh}
               disabled={isRefreshing}
               className="p-2 border border-[#2E2824] hover:bg-[#2A2420] text-[#9E958C] hover:text-[#F5F0EB] rounded-xl transition-colors flex items-center justify-center cursor-pointer disabled:opacity-50"
@@ -439,6 +549,28 @@ export default function BaristaOrderQueue({
           />
         </div>
       </div>
+
+      {/* Audio Unlock Prompt Banner (shown if browser has not yet registered interaction) */}
+      {mounted && soundEnabled && !audioReady && (
+        <div
+          onClick={async () => {
+            await unlockAudio();
+            setAudioReady(true);
+            playNewOrderSound('barista_queue_sound');
+          }}
+          className="bg-[#10B981]/15 border border-[#10B981]/35 hover:bg-[#10B981]/25 text-[#10B981] px-4 py-3 rounded-2xl text-xs flex items-center justify-between cursor-pointer transition-all shadow-md"
+        >
+          <div className="flex items-center gap-2.5 min-w-0">
+            <Volume2 className="w-4 h-4 shrink-0 text-[#10B981] animate-bounce" />
+            <span className="truncate">
+              <strong>{dict.soundAlertsPrompt}</strong> — Click anywhere to allow live order chimes.
+            </span>
+          </div>
+          <span className="bg-[#10B981] hover:bg-[#059669] text-[#141210] font-bold px-3 py-1.5 rounded-xl text-xs shrink-0 ml-3 shadow-xs">
+            {dict.enableSound}
+          </span>
+        </div>
+      )}
 
       {/* Orders Grid */}
       {filteredOrders.length === 0 ? (

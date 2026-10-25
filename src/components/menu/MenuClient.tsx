@@ -371,8 +371,20 @@ function MenuClientContent({
         );
       }
 
+      const orderId = data.orderId || data.order?.orderId || data.order?.id;
+      if (!orderId) {
+        throw new Error(
+          data.error || "Order created, but failed to retrieve confirmation ID.",
+        );
+      }
+
+      // Reset cart and notes on successful submission
+      setCart([]);
+      setOrderNotes("");
+      setIsCartOpen(false);
+
       // Order created successfully, navigate to live order tracker
-      router.push(`/menu/order/${data.orderId}`);
+      router.push(`/menu/order/${orderId}`);
     } catch (err: unknown) {
       setSubmitError(
         err instanceof Error ? err.message : "An unexpected error occurred",

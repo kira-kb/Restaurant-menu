@@ -369,8 +369,10 @@ export async function updateOrderStatus(
  * Retrieves an order's live status for customer confirmation page
  */
 export async function getPublicOrderStatus(orderId: string) {
-  const order = await prisma.order.findUnique({
-    where: { id: orderId },
+  const order = await prisma.order.findFirst({
+    where: {
+      OR: [{ id: orderId }, { orderNumber: orderId }],
+    },
     include: {
       table: { select: { tableNumber: true, displayName: true } },
       items: {

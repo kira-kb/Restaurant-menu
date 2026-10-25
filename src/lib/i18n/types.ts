@@ -58,6 +58,10 @@ export interface TranslationDictionary {
   orderCancelledDesc: string;
   itemsOrdered: string;
   orderMoreItems: string;
+  soundOn: string;
+  soundMuted: string;
+  soundAlertsPrompt: string;
+  enableSound: string;
 
   // Staff Portal - Common
   staffPortal: string;

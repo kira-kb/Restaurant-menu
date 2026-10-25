@@ -6,6 +6,9 @@ export default async function CustomerOrderPage(props: {
   params: Promise<{ id: string }>;
 }) {
   const { id } = await props.params;
+  if (!id || id === 'undefined') {
+    notFound();
+  }
   const order = await getPublicOrderStatus(id);
 
   if (!order) {
