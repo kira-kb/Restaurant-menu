@@ -9,6 +9,10 @@ import {
   toggleMenuItemAvailabilityAction as toggleMenuItemAvailabilityInternal,
   archiveMenuItemAction as archiveMenuItemInternal,
   updateMenuItemImageLinkAction as updateMenuItemImageLinkInternal,
+  createAddonAction as createAddonInternal,
+  updateAddonAction as updateAddonInternal,
+  toggleAddonAvailabilityAction as toggleAddonAvailabilityInternal,
+  archiveAddonAction as archiveAddonInternal,
 } from '@/lib/menu';
 
 export async function createCategoryAction(formData: FormData) {
@@ -41,4 +45,20 @@ export async function archiveMenuItemAction(id: string) {
 
 export async function updateMenuItemImageLinkAction(id: string, imageUrl: string | null) {
   return updateMenuItemImageLinkInternal(id, imageUrl);
+}
+
+export async function createAddonAction(formData: FormData) {
+  return createAddonInternal(formData);
+}
+
+export async function updateAddonAction(id: string, formData: FormData) {
+  return updateAddonInternal(id, formData);
+}
+
+export async function toggleAddonAvailabilityAction(id: string) {
+  return toggleAddonAvailabilityInternal(id);
+}
+
+export async function archiveAddonAction(id: string) {
+  return archiveAddonInternal(id);
 }

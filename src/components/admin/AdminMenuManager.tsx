@@ -16,6 +16,7 @@ import {
   Check,
   Image as ImageIcon,
   Loader2,
+  Sparkles,
 } from 'lucide-react';
 import {
   createMenuItemAction,
@@ -31,6 +32,16 @@ interface CategoryOption {
   name: string;
 }
 
+export interface AddonOption {
+  id: string;
+  name: string;
+  nameAm?: string | null;
+  nameEn?: string | null;
+  price: number;
+  icon?: string | null;
+  isAvailable: boolean;
+}
+
 interface MenuItemRecord {
   id: string;
   name: string;
@@ -44,6 +55,8 @@ interface MenuItemRecord {
   isAvailable: boolean;
   categoryId: string;
   category: { id: string; name: string };
+  addonIds?: string[];
+  recommendedItemIds?: string[];
 }
 
 const SAMPLE_IMAGE_LINKS = [
@@ -72,13 +85,15 @@ const SAMPLE_IMAGE_LINKS = [
 export default function AdminMenuManager({
   initialItems,
   categories,
+  availableAddons = [],
   currency,
 }: {
   initialItems: MenuItemRecord[];
   categories: CategoryOption[];
+  availableAddons?: AddonOption[];
   currency: string;
 }) {
-  const { dict, formatCurrency, translateMenuItem } = useLanguage();
+  const { dict, language, formatCurrency, translateMenuItem } = useLanguage();
   const [items, setItems] = useState<MenuItemRecord[]>(initialItems);
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedCategory, setSelectedCategory] = useState('all');
@@ -88,6 +103,9 @@ export default function AdminMenuManager({
   const [modalOpen, setModalOpen] = useState(false);
   const [editingItem, setEditingItem] = useState<MenuItemRecord | null>(null);
   const [imageUrlInput, setImageUrlInput] = useState('');
+  const [selectedAddonIds, setSelectedAddonIds] = useState<string[]>([]);
+  const [selectedRecIds, setSelectedRecIds] = useState<string[]>([]);
+  const [recSearchQuery, setRecSearchQuery] = useState('');
   const [formError, setFormError] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
@@ -123,6 +141,9 @@ export default function AdminMenuManager({
   const openCreateModal = () => {
     setEditingItem(null);
     setImageUrlInput('');
+    setSelectedAddonIds([]);
+    setSelectedRecIds([]);
+    setRecSearchQuery('');
     setFormError(null);
     setModalOpen(true);
   };
@@ -130,6 +151,9 @@ export default function AdminMenuManager({
   const openEditModal = (item: MenuItemRecord) => {
     setEditingItem(item);
     setImageUrlInput(item.imageUrl || '');
+    setSelectedAddonIds(item.addonIds || []);
+    setSelectedRecIds(item.recommendedItemIds || []);
+    setRecSearchQuery('');
     setFormError(null);
     setModalOpen(true);
   };
@@ -227,6 +251,8 @@ export default function AdminMenuManager({
                   imageUrl: updated.imageUrl,
                   category: { id: updated.categoryId, name: cat?.name || '' },
                   isAvailable: updated.isAvailable,
+                  addonIds: selectedAddonIds,
+                  recommendedItemIds: selectedRecIds,
                 }
               : i
           )
@@ -248,6 +274,8 @@ export default function AdminMenuManager({
             isAvailable: created.isAvailable,
             categoryId: created.categoryId,
             category: { id: created.categoryId, name: cat?.name || '' },
+            addonIds: selectedAddonIds,
+            recommendedItemIds: selectedRecIds,
           },
           ...prev,
         ]);
@@ -853,7 +881,7 @@ export default function AdminMenuManager({
       {/* FULL ADD / EDIT PRODUCT MODAL */}
       {modalOpen && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 backdrop-blur-xs p-4">
-          <div className="bg-[#1E1A17] w-full max-w-md rounded-2xl shadow-2xl overflow-hidden flex flex-col border border-[#2E2824] max-h-[90vh]">
+          <div className="bg-[#1E1A17] w-full max-w-xl rounded-2xl shadow-2xl overflow-hidden flex flex-col border border-[#2E2824] max-h-[90vh]">
             <div className="px-5 py-4 bg-[#241F1C] border-b border-[#2E2824] flex items-center justify-between">
               <h3 className="text-sm font-semibold text-[#F5F0EB]">
                 {editingItem ? dict.editProductModalTitle : dict.createProductModalTitle}
@@ -1069,6 +1097,189 @@ export default function AdminMenuManager({
                   </div>
                 </div>
               </div>
+
+              {/* Specialty Add-ons Multi-Select */}
+              <div className="p-3.5 bg-[#241F1C] border border-[#2E2824] rounded-xl space-y-2.5">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-1.5">
+                    <Sparkles className="w-4 h-4 text-[#10B981]" />
+                    <span className="text-[11px] font-semibold text-[#F5F0EB]">
+                      {dict.chooseAddonsForProduct}
+                    </span>
+                  </div>
+                  <span className="text-[10px] text-[#10B981] font-mono">
+                    {selectedAddonIds.length} {dict.thActions.toLowerCase()}
+                  </span>
+                </div>
+
+                {availableAddons.length === 0 ? (
+                  <p className="text-[11px] text-[#7E756C]">
+                    {dict.noAddonsConfigured}
+                  </p>
+                ) : (
+                  <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
+                    {availableAddons.map((addon) => {
+                      const isSelected = selectedAddonIds.includes(addon.id);
+                      const localizedName =
+                        language === 'am'
+                          ? addon.nameAm || addon.name
+                          : addon.nameEn || addon.name;
+
+                      return (
+                        <button
+                          key={addon.id}
+                          type="button"
+                          onClick={() => {
+                            setSelectedAddonIds((prev) =>
+                              isSelected
+                                ? prev.filter((id) => id !== addon.id)
+                                : [...prev, addon.id]
+                            );
+                          }}
+                          className={`p-2 rounded-xl border flex items-center gap-2 text-left cursor-pointer transition-all ${
+                            isSelected
+                              ? 'bg-[#10B981]/15 border-[#10B981] text-[#10B981]'
+                              : 'bg-[#1E1A17] border-[#2E2824] text-[#9E958C] hover:border-[#3D342E]'
+                          }`}
+                        >
+                          <span className="text-base">{addon.icon || '☕'}</span>
+                          <div className="min-w-0 flex-1">
+                            <span className="text-[11px] font-medium leading-tight block truncate">
+                              {localizedName}
+                            </span>
+                            <span className="text-[10px] font-mono text-[#E06D53] block">
+                              {addon.price > 0
+                                ? `+${addon.price} ETB`
+                                : dict.freeAddon}
+                            </span>
+                          </div>
+                          {isSelected && <Check className="w-3.5 h-3.5 shrink-0" />}
+                        </button>
+                      );
+                    })}
+                  </div>
+                )}
+              </div>
+
+              {/* Hidden inputs for selected addons */}
+              {selectedAddonIds.map((id) => (
+                <input
+                  key={`addon-${id}`}
+                  type="hidden"
+                  name="addonIds"
+                  value={id}
+                />
+              ))}
+
+              {/* We Recommend Multi-Select */}
+              <div className="p-3.5 bg-[#241F1C] border border-[#2E2824] rounded-xl space-y-2.5">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-1.5">
+                    <Coffee className="w-4 h-4 text-[#10B981]" />
+                    <span className="text-[11px] font-semibold text-[#F5F0EB]">
+                      {dict.recommendationsForProduct}
+                    </span>
+                  </div>
+                  <span className="text-[10px] text-[#10B981] font-mono">
+                    {selectedRecIds.length} {dict.thItems.toLowerCase()}
+                  </span>
+                </div>
+
+                <div className="relative">
+                  <Search className="w-3.5 h-3.5 absolute left-2.5 top-1/2 -translate-y-1/2 text-[#7E756C]" />
+                  <input
+                    type="text"
+                    value={recSearchQuery}
+                    onChange={(e) => setRecSearchQuery(e.target.value)}
+                    placeholder={dict.searchMenuItemsPlaceholder}
+                    className="w-full pl-8 pr-3 py-1.5 bg-[#1E1A17] border border-[#2E2824] rounded-lg text-xs text-[#F5F0EB] placeholder-[#7E756C] focus:outline-hidden focus:border-[#10B981]"
+                  />
+                </div>
+
+                <div className="max-h-48 overflow-y-auto space-y-1.5 pr-1 divide-y divide-[#2E2824]/40">
+                  {items
+                    .filter((other) => other.id !== editingItem?.id)
+                    .filter((other) => {
+                      if (!recSearchQuery.trim()) return true;
+                      const q = recSearchQuery.toLowerCase();
+                      return (
+                        other.name.toLowerCase().includes(q) ||
+                        (other.nameAm && other.nameAm.toLowerCase().includes(q)) ||
+                        (other.nameEn && other.nameEn.toLowerCase().includes(q))
+                      );
+                    })
+                    .map((other) => {
+                      const isRecSelected = selectedRecIds.includes(other.id);
+                      const localizedOther = translateMenuItem(
+                        other.name,
+                        other.description,
+                        other.nameAm,
+                        other.nameEn
+                      );
+
+                      return (
+                        <div
+                          key={other.id}
+                          onClick={() => {
+                            setSelectedRecIds((prev) =>
+                              isRecSelected
+                                ? prev.filter((id) => id !== other.id)
+                                : [...prev, other.id]
+                            );
+                          }}
+                          className={`p-2 rounded-xl flex items-center justify-between gap-2.5 cursor-pointer transition-colors ${
+                            isRecSelected
+                              ? 'bg-[#10B981]/10 text-[#F5F0EB]'
+                              : 'hover:bg-[#1E1A17] text-[#9E958C]'
+                          }`}
+                        >
+                          <div className="flex items-center gap-2.5 min-w-0">
+                            {/* eslint-disable-next-line @next/next/no-img-element */}
+                            <img
+                              src={
+                                other.imageUrl ||
+                                'https://images.unsplash.com/photo-1514432324607-a09d9b4aefdd?auto=format&fit=crop&w=100&q=80'
+                              }
+                              alt={localizedOther.name}
+                              className="w-7 h-7 rounded-lg object-cover border border-[#2E2824] shrink-0"
+                              onError={(e) => {
+                                (e.target as HTMLElement).style.display = 'none';
+                              }}
+                            />
+                            <div className="min-w-0">
+                              <span className="text-xs font-medium text-[#F5F0EB] block truncate">
+                                {localizedOther.name}
+                              </span>
+                              <span className="text-[10px] text-[#7E756C] block">
+                                {other.category.name} • {Number(other.price).toFixed(2)}{' '}
+                                {formatCurrency(currency)}
+                              </span>
+                            </div>
+                          </div>
+                          <div
+                            className={`w-4 h-4 rounded-md border flex items-center justify-center shrink-0 transition-colors ${
+                              isRecSelected
+                                ? 'bg-[#10B981] border-[#10B981] text-[#141210]'
+                                : 'border-[#3E3834]'
+                            }`}
+                          >
+                            {isRecSelected && <Check className="w-3 h-3 stroke-[3]" />}
+                          </div>
+                        </div>
+                      );
+                    })}
+                </div>
+              </div>
+
+              {/* Hidden inputs for selected recommendations */}
+              {selectedRecIds.map((id) => (
+                <input
+                  key={`rec-${id}`}
+                  type="hidden"
+                  name="recommendedItemIds"
+                  value={id}
+                />
+              ))}
 
               <div className="flex items-center gap-2 pt-1">
                 <input

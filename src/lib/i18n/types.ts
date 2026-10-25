@@ -84,6 +84,7 @@ export interface TranslationDictionary {
   adminAudit: string;
   adminMenu: string;
   adminCategories: string;
+  adminAddons: string;
   adminTables: string;
   adminStaff: string;
   adminOrders: string;
@@ -168,6 +169,32 @@ export interface TranslationDictionary {
   availableForOrdering: string;
   cancelBtn: string;
   noProductsFound: string;
+  chooseAddonsForProduct: string;
+  noAddonsConfigured: string;
+  recommendationsForProduct: string;
+  searchMenuItemsPlaceholder: string;
+  noRecommendationsSelected: string;
+
+  // Staff Portal - Addons Tab
+  addonsPageTitle: string;
+  addonsPageSubtitle: string;
+  addNewAddon: string;
+  thIcon: string;
+  thAddonName: string;
+  thExtraPrice: string;
+  thAppliedToItems: string;
+  createAddonModalTitle: string;
+  editAddonModalTitle: string;
+  addonNameLabel: string;
+  addonNameAmLabel: string;
+  addonNameEnLabel: string;
+  addonPriceLabel: string;
+  addonIconLabel: string;
+  addonAvailableLabel: string;
+  deleteAddonConfirm: string;
+  noAddonsFound: string;
+  searchAddonsPlaceholder: string;
+  freeAddon: string;
 
   // Staff Portal - Categories Tab
   categoriesPageTitle: string;

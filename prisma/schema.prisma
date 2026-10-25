@@ -112,8 +112,53 @@ model MenuItem {
   updatedAt     DateTime    @updatedAt
   orderItems    OrderItem[]
 
+  addons          MenuItemAddon[]
+  recommendations MenuItemRecommendation[] @relation("ItemSourceRecommendations")
+  recommendedBy   MenuItemRecommendation[] @relation("ItemTargetRecommendations")
+
   @@index([categoryId])
   @@index([isAvailable, isArchived])
+}
+
+model MenuAddon {
+  id           String          @id @default(cuid())
+  name         String
+  nameAm       String?
+  nameEn       String?
+  price        Decimal         @default(0) @db.Decimal(10, 2)
+  icon         String?
+  isAvailable  Boolean         @default(true)
+  isArchived   Boolean         @default(false)
+  displayOrder Int             @default(0)
+  createdAt    DateTime        @default(now())
+  updatedAt    DateTime        @updatedAt
+  menuItems    MenuItemAddon[]
+
+  @@index([isAvailable, isArchived])
+}
+
+model MenuItemAddon {
+  id         String    @id @default(cuid())
+  menuItemId String
+  addonId    String
+  menuItem   MenuItem  @relation(fields: [menuItemId], references: [id], onDelete: Cascade)
+  addon      MenuAddon @relation(fields: [addonId], references: [id], onDelete: Cascade)
+
+  @@unique([menuItemId, addonId])
+  @@index([menuItemId])
+  @@index([addonId])
+}
+
+model MenuItemRecommendation {
+  id                String   @id @default(cuid())
+  menuItemId        String
+  recommendedItemId String
+  menuItem          MenuItem @relation("ItemSourceRecommendations", fields: [menuItemId], references: [id], onDelete: Cascade)
+  recommendedItem   MenuItem @relation("ItemTargetRecommendations", fields: [recommendedItemId], references: [id], onDelete: Cascade)
+
+  @@unique([menuItemId, recommendedItemId])
+  @@index([menuItemId])
+  @@index([recommendedItemId])
 }
 
 model CafeTable {

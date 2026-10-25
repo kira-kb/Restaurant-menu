@@ -33,6 +33,18 @@ export const MenuItemInputSchema = z.object({
     .nullable()
     .transform((val) => (val && val.length > 0 ? val : null)),
   isAvailable: z.boolean().default(true),
+  addonIds: z.array(z.string()).optional().default([]),
+  recommendedItemIds: z.array(z.string()).optional().default([]),
+});
+
+export const MenuAddonInputSchema = z.object({
+  name: z.string().min(1, 'Name must be at least 1 character').max(100),
+  nameAm: z.string().max(100).optional().nullable().transform((val) => (val && val.trim().length > 0 ? val.trim() : null)),
+  nameEn: z.string().max(100).optional().nullable().transform((val) => (val && val.trim().length > 0 ? val.trim() : null)),
+  price: z.coerce.number().min(0, 'Price must be 0 or greater').default(0),
+  icon: z.string().max(10).optional().nullable().transform((val) => (val && val.trim().length > 0 ? val.trim() : null)),
+  isAvailable: z.boolean().default(true),
+  displayOrder: z.coerce.number().int().min(0).default(0),
 });
 
 export const TableInputSchema = z.object({

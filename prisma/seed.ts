@@ -312,6 +312,87 @@ async function main() {
   }
   console.log(`✓ ${tables.length} tables seeded`);
 
+  // 7. Specialty Menu Add-ons
+  const defaultAddons = [
+    { name: 'Oat Milk', nameAm: 'የአጃ ወተት', nameEn: 'Oat Milk', price: 50, icon: '🥛', displayOrder: 1 },
+    { name: 'Extra Shot', nameAm: 'ተጨማሪ ሾት', nameEn: 'Extra Shot', price: 40, icon: '☕', displayOrder: 2 },
+    { name: 'Vanilla Bean', nameAm: 'ቫኒላ ቢን', nameEn: 'Vanilla Bean', price: 30, icon: '🌿', displayOrder: 3 },
+    { name: 'Sweet Cream', nameAm: 'ጣፋጭ ክሬም', nameEn: 'Sweet Cream', price: 35, icon: '🍦', displayOrder: 4 },
+    { name: 'No Sugar', nameAm: 'ያለ ስኳር', nameEn: 'No Sugar', price: 0, icon: '🍃', displayOrder: 5 },
+    { name: 'Cardamom', nameAm: 'ሄል / ካርዳሞም', nameEn: 'Cardamom', price: 20, icon: '✨', displayOrder: 6 },
+  ];
+
+  const createdAddons = [];
+  for (const a of defaultAddons) {
+    const existing = await prisma.menuAddon.findFirst({ where: { name: a.name } });
+    if (existing) {
+      createdAddons.push(existing);
+    } else {
+      const created = await prisma.menuAddon.create({
+        data: {
+          name: a.name,
+          nameAm: a.nameAm,
+          nameEn: a.nameEn,
+          price: a.price,
+          icon: a.icon,
+          displayOrder: a.displayOrder,
+          isAvailable: true,
+        },
+      });
+      createdAddons.push(created);
+    }
+  }
+  console.log(`✓ ${createdAddons.length} menu add-ons seeded`);
+
+  // Associate addons with drinks/beverages
+  const drinkCategories = await prisma.category.findMany({
+    where: { slug: { in: ['specialty-brews', 'espresso-classics', 'signature-cold-creations', 'traditional-ceremony'] } },
+    include: { menuItems: true },
+  });
+
+  for (const cat of drinkCategories) {
+    for (const item of cat.menuItems) {
+      for (const addon of createdAddons) {
+        await prisma.menuItemAddon.upsert({
+          where: {
+            menuItemId_addonId: { menuItemId: item.id, addonId: addon.id },
+          },
+          update: {},
+          create: { menuItemId: item.id, addonId: addon.id },
+        });
+      }
+    }
+  }
+
+  // Associate pastries/bakery items as recommendations for drinks
+  const bakeryCategory = await prisma.category.findFirst({
+    where: { slug: 'pastries-bakery' },
+    include: { menuItems: true },
+  });
+
+  if (bakeryCategory && bakeryCategory.menuItems.length > 0) {
+    const bakeryItems = bakeryCategory.menuItems;
+    for (const cat of drinkCategories) {
+      for (const item of cat.menuItems) {
+        for (const rec of bakeryItems.slice(0, 3)) {
+          await prisma.menuItemRecommendation.upsert({
+            where: {
+              menuItemId_recommendedItemId: {
+                menuItemId: item.id,
+                recommendedItemId: rec.id,
+              },
+            },
+            update: {},
+            create: {
+              menuItemId: item.id,
+              recommendedItemId: rec.id,
+            },
+          });
+        }
+      }
+    }
+  }
+
   console.log('--- Seed Completed Successfully ---');
 }
 

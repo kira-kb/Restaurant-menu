@@ -19,6 +19,15 @@ import { LanguageProvider, useLanguage } from "@/lib/i18n/context";
 import LanguageSwitcher from "@/components/ui/LanguageSwitcher";
 import { ADDON_TRANSLATIONS } from "@/lib/i18n/translations";
 
+export interface MenuItemAddonData {
+  id: string;
+  name: string;
+  nameAm?: string | null;
+  nameEn?: string | null;
+  price: number;
+  icon?: string | null;
+}
+
 export interface MenuItemData {
   id: string;
   name: string;
@@ -31,6 +40,8 @@ export interface MenuItemData {
   imageUrl: string | null;
   isAvailable: boolean;
   categoryId: string;
+  addons?: MenuItemAddonData[];
+  recommendations?: MenuItemData[];
 }
 
 export interface CategoryData {
@@ -84,22 +95,6 @@ const CATEGORY_IMAGES: Record<string, string> = {
     "https://images.unsplash.com/photo-1576092768241-dec231879fc3?auto=format&fit=crop&w=200&q=80",
 };
 
-// Specialty Coffee Customization Add-ons
-interface AddonOption {
-  id: string;
-  name: string;
-  icon: string;
-}
-
-const AVAILABLE_ADDONS: AddonOption[] = [
-  { id: "oat-milk", name: "Oat Milk", icon: "🥛" },
-  { id: "extra-shot", name: "Extra Shot", icon: "☕" },
-  { id: "vanilla-syrup", name: "Vanilla Bean", icon: "🌿" },
-  { id: "sweet-cream", name: "Sweet Cream", icon: "🍦" },
-  { id: "no-sugar", name: "No Sugar", icon: "🍃" },
-  { id: "cardamom-twist", name: "Cardamom", icon: "✨" },
-];
-
 function MenuClientContent({
   categories,
   tables,
@@ -145,9 +140,12 @@ function MenuClientContent({
     return categories.flatMap((c) => c.items);
   }, [categories]);
 
-  // Recommendations: 4 popular pairing items
+  // Recommendations: admin-selected recommendations with fallback
   const recommendedItems = useMemo(() => {
     if (!detailProduct) return allProducts.slice(0, 4);
+    if (detailProduct.recommendations && detailProduct.recommendations.length > 0) {
+      return detailProduct.recommendations;
+    }
     return allProducts
       .filter(
         (p) =>
@@ -183,8 +181,14 @@ function MenuClientContent({
     if (!detailProduct || !detailProduct.isAvailable) return;
 
     // Localize addon names in notes according to current language
-    const localizedAddonNotes = selectedAddons.map((addon) => {
-      return ADDON_TRANSLATIONS[addon]?.[language] || addon;
+    const localizedAddonNotes = selectedAddons.map((addonName) => {
+      const match = detailProduct.addons?.find((a) => a.name === addonName);
+      if (match) {
+        return language === "am"
+          ? match.nameAm || match.name
+          : match.nameEn || match.name;
+      }
+      return ADDON_TRANSLATIONS[addonName]?.[language] || addonName;
     });
 
     const compiledNotes = [localizedAddonNotes.join(", "), detailNotes.trim()]
@@ -747,36 +751,45 @@ function MenuClientContent({
                 )}
 
                 {/* Add-ons section */}
-                <div className="space-y-2.5">
-                  <h3 className="text-xs font-medium text-[#F5F0EB]">
-                    {dict.chooseAddons}
-                  </h3>
-                  <div className="grid grid-cols-3 gap-2">
-                    {AVAILABLE_ADDONS.map((addon) => {
-                      const isSelected = selectedAddons.includes(addon.name);
-                      const localizedAddonLabel =
-                        ADDON_TRANSLATIONS[addon.name]?.[language] || addon.name;
+                {detailProduct.addons && detailProduct.addons.length > 0 && (
+                  <div className="space-y-2.5">
+                    <h3 className="text-xs font-medium text-[#F5F0EB]">
+                      {dict.chooseAddons}
+                    </h3>
+                    <div className="grid grid-cols-3 gap-2">
+                      {detailProduct.addons.map((addon) => {
+                        const isSelected = selectedAddons.includes(addon.name);
+                        const localizedAddonLabel =
+                          language === "am"
+                            ? addon.nameAm || addon.name
+                            : addon.nameEn || addon.name;
 
-                      return (
-                        <button
-                          key={addon.id}
-                          type="button"
-                          onClick={() => toggleAddon(addon.name)}
-                          className={`p-2.5 rounded-2xl border flex flex-col items-center gap-1.5 transition-all text-center cursor-pointer ${
-                            isSelected
-                              ? "bg-[#10B981]/15 border-[#10B981] text-[#10B981]"
-                              : "bg-[#241F1C] border-[#2E2824] text-[#9E958C] hover:border-[#3D342E]"
-                          }`}
-                        >
-                          <span className="text-lg">{addon.icon}</span>
-                          <span className="text-[11px] font-medium leading-tight">
-                            {localizedAddonLabel}
-                          </span>
-                        </button>
-                      );
-                    })}
+                        return (
+                          <button
+                            key={addon.id}
+                            type="button"
+                            onClick={() => toggleAddon(addon.name)}
+                            className={`p-2.5 rounded-2xl border flex flex-col items-center gap-1.5 transition-all text-center cursor-pointer ${
+                              isSelected
+                                ? "bg-[#10B981]/15 border-[#10B981] text-[#10B981]"
+                                : "bg-[#241F1C] border-[#2E2824] text-[#9E958C] hover:border-[#3D342E]"
+                            }`}
+                          >
+                            <span className="text-lg">{addon.icon || "☕"}</span>
+                            <span className="text-[11px] font-medium leading-tight">
+                              {localizedAddonLabel}
+                            </span>
+                            {addon.price > 0 && (
+                              <span className="text-[10px] text-[#E06D53] font-mono">
+                                +{addon.price} ETB
+                              </span>
+                            )}
+                          </button>
+                        );
+                      })}
+                    </div>
                   </div>
-                </div>
+                )}
 
                 {/* We recommend (Pairings section) */}
                 <div className="space-y-2.5 pt-1">

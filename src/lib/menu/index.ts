@@ -2,7 +2,7 @@ import { unstable_cache, revalidateTag, revalidatePath } from 'next/cache';
 import prisma from '@/lib/prisma';
 import { requireRole } from '@/lib/auth/session';
 import { Role, Prisma } from '@prisma/client';
-import { CategoryInputSchema, MenuItemInputSchema } from '@/lib/validations';
+import { CategoryInputSchema, MenuItemInputSchema, MenuAddonInputSchema } from '@/lib/validations';
 
 export function serializeMenuItem<T extends {
   id: string;
@@ -53,6 +53,14 @@ export async function fetchPublicMenuData() {
       menuItems: {
         where: { isArchived: false },
         orderBy: { name: 'asc' },
+        include: {
+          addons: {
+            include: { addon: true },
+          },
+          recommendations: {
+            include: { recommendedItem: true },
+          },
+        },
       },
     },
   });
@@ -79,6 +87,31 @@ export async function fetchPublicMenuData() {
       imageUrl: item.imageUrl,
       isAvailable: item.isAvailable,
       categoryId: item.categoryId,
+      addons: item.addons
+        .filter((a) => !a.addon.isArchived && a.addon.isAvailable)
+        .map((a) => ({
+          id: a.addon.id,
+          name: a.addon.name,
+          nameAm: a.addon.nameAm,
+          nameEn: a.addon.nameEn,
+          price: Number(a.addon.price),
+          icon: a.addon.icon,
+        })),
+      recommendations: item.recommendations
+        .filter((r) => !r.recommendedItem.isArchived && r.recommendedItem.isAvailable)
+        .map((r) => ({
+          id: r.recommendedItem.id,
+          name: r.recommendedItem.name,
+          nameAm: r.recommendedItem.nameAm,
+          nameEn: r.recommendedItem.nameEn,
+          description: r.recommendedItem.description,
+          descriptionAm: r.recommendedItem.descriptionAm,
+          descriptionEn: r.recommendedItem.descriptionEn,
+          price: Number(r.recommendedItem.price),
+          imageUrl: r.recommendedItem.imageUrl,
+          categoryId: r.recommendedItem.categoryId,
+          isAvailable: r.recommendedItem.isAvailable,
+        })),
     })),
   }));
 }
@@ -256,15 +289,32 @@ export async function getAdminMenuItems(search?: string, categoryId?: string) {
     orderBy: [{ category: { displayOrder: 'asc' } }, { name: 'asc' }],
     include: {
       category: { select: { id: true, name: true, slug: true } },
+      addons: { select: { addonId: true } },
+      recommendations: { select: { recommendedItemId: true } },
     },
   });
 
   return items.map((item) => ({
     ...item,
     price: Number(item.price),
+    addonIds: item.addons.map((a) => a.addonId),
+    recommendedItemIds: item.recommendations.map((r) => r.recommendedItemId),
     createdAt: item.createdAt.toISOString(),
     updatedAt: item.updatedAt.toISOString(),
   }));
+}
+
+function parseIdArray(formData: FormData, fieldName: string): string[] {
+  const rawValues = formData.getAll(fieldName);
+  if (rawValues.length === 1 && typeof rawValues[0] === 'string' && rawValues[0].startsWith('[')) {
+    try {
+      const parsed = JSON.parse(rawValues[0]);
+      if (Array.isArray(parsed)) return parsed.map(String).filter(Boolean);
+    } catch {
+      // Fall through
+    }
+  }
+  return rawValues.map(String).filter(Boolean);
 }
 
 export async function createMenuItemAction(formData: FormData) {
@@ -284,6 +334,8 @@ export async function createMenuItemAction(formData: FormData) {
   };
 
   const validated = MenuItemInputSchema.parse(rawData);
+  const addonIds = parseIdArray(formData, 'addonIds');
+  const recommendedItemIds = parseIdArray(formData, 'recommendedItemIds');
 
   const item = await prisma.menuItem.create({
     data: {
@@ -298,6 +350,12 @@ export async function createMenuItemAction(formData: FormData) {
       imageUrl: validated.imageUrl,
       isAvailable: validated.isAvailable,
       isArchived: false,
+      addons: addonIds.length > 0 ? {
+        create: addonIds.map((addonId) => ({ addonId })),
+      } : undefined,
+      recommendations: recommendedItemIds.length > 0 ? {
+        create: recommendedItemIds.map((recommendedItemId) => ({ recommendedItemId })),
+      } : undefined,
     },
   });
 
@@ -323,21 +381,41 @@ export async function updateMenuItemAction(id: string, formData: FormData) {
   };
 
   const validated = MenuItemInputSchema.parse(rawData);
+  const addonIds = parseIdArray(formData, 'addonIds');
+  const recommendedItemIds = parseIdArray(formData, 'recommendedItemIds');
 
-  const updated = await prisma.menuItem.update({
-    where: { id },
-    data: {
-      name: validated.name,
-      nameAm: validated.nameAm,
-      nameEn: validated.nameEn,
-      description: validated.description,
-      descriptionAm: validated.descriptionAm,
-      descriptionEn: validated.descriptionEn,
-      price: validated.price,
-      categoryId: validated.categoryId,
-      imageUrl: validated.imageUrl,
-      isAvailable: validated.isAvailable,
-    },
+  const updated = await prisma.$transaction(async (tx) => {
+    // Sync addons
+    await tx.menuItemAddon.deleteMany({ where: { menuItemId: id } });
+    if (addonIds.length > 0) {
+      await tx.menuItemAddon.createMany({
+        data: addonIds.map((addonId) => ({ menuItemId: id, addonId })),
+      });
+    }
+
+    // Sync recommendations
+    await tx.menuItemRecommendation.deleteMany({ where: { menuItemId: id } });
+    if (recommendedItemIds.length > 0) {
+      await tx.menuItemRecommendation.createMany({
+        data: recommendedItemIds.map((recId) => ({ menuItemId: id, recommendedItemId: recId })),
+      });
+    }
+
+    return tx.menuItem.update({
+      where: { id },
+      data: {
+        name: validated.name,
+        nameAm: validated.nameAm,
+        nameEn: validated.nameEn,
+        description: validated.description,
+        descriptionAm: validated.descriptionAm,
+        descriptionEn: validated.descriptionEn,
+        price: validated.price,
+        categoryId: validated.categoryId,
+        imageUrl: validated.imageUrl,
+        isAvailable: validated.isAvailable,
+      },
+    });
   });
 
   revalidateTag(MENU_CACHE_TAG, 'default');
@@ -385,4 +463,141 @@ export async function updateMenuItemImageLinkAction(id: string, imageUrl: string
   revalidateTag(MENU_CACHE_TAG, 'default');
   revalidatePath('/menu');
   return serializeMenuItem(updated);
+}
+
+/* ========================================================================= */
+/* ADMIN MENU ADD-ONS MANAGEMENT (FULL CRUD)                                 */
+/* ========================================================================= */
+
+export async function getAdminAddons() {
+  await requireRole([Role.ADMIN]);
+
+  const addons = await prisma.menuAddon.findMany({
+    where: { isArchived: false },
+    orderBy: [{ displayOrder: 'asc' }, { name: 'asc' }],
+    include: {
+      _count: {
+        select: { menuItems: true },
+      },
+    },
+  });
+
+  return addons.map((addon) => ({
+    id: addon.id,
+    name: addon.name,
+    nameAm: addon.nameAm,
+    nameEn: addon.nameEn,
+    price: Number(addon.price),
+    icon: addon.icon,
+    displayOrder: addon.displayOrder,
+    isAvailable: addon.isAvailable,
+    menuItemCount: addon._count.menuItems,
+    createdAt: addon.createdAt.toISOString(),
+    updatedAt: addon.updatedAt.toISOString(),
+  }));
+}
+
+export async function createAddonAction(formData: FormData) {
+  await requireRole([Role.ADMIN]);
+
+  const rawData = {
+    name: formData.get('name'),
+    nameAm: formData.get('nameAm') || null,
+    nameEn: formData.get('nameEn') || null,
+    price: formData.get('price') || 0,
+    icon: formData.get('icon') || null,
+    displayOrder: formData.get('displayOrder') || 0,
+    isAvailable: formData.get('isAvailable') === 'true' || formData.get('isAvailable') === 'on',
+  };
+
+  const validated = MenuAddonInputSchema.parse(rawData);
+
+  const addon = await prisma.menuAddon.create({
+    data: {
+      name: validated.name,
+      nameAm: validated.nameAm,
+      nameEn: validated.nameEn,
+      price: validated.price,
+      icon: validated.icon,
+      displayOrder: validated.displayOrder,
+      isAvailable: validated.isAvailable,
+      isArchived: false,
+    },
+  });
+
+  revalidateTag(MENU_CACHE_TAG, 'default');
+  revalidatePath('/menu');
+  return {
+    ...addon,
+    price: Number(addon.price),
+  };
+}
+
+export async function updateAddonAction(id: string, formData: FormData) {
+  await requireRole([Role.ADMIN]);
+
+  const rawData = {
+    name: formData.get('name'),
+    nameAm: formData.get('nameAm') || null,
+    nameEn: formData.get('nameEn') || null,
+    price: formData.get('price') || 0,
+    icon: formData.get('icon') || null,
+    displayOrder: formData.get('displayOrder') || 0,
+    isAvailable: formData.get('isAvailable') === 'true' || formData.get('isAvailable') === 'on',
+  };
+
+  const validated = MenuAddonInputSchema.parse(rawData);
+
+  const updated = await prisma.menuAddon.update({
+    where: { id },
+    data: {
+      name: validated.name,
+      nameAm: validated.nameAm,
+      nameEn: validated.nameEn,
+      price: validated.price,
+      icon: validated.icon,
+      displayOrder: validated.displayOrder,
+      isAvailable: validated.isAvailable,
+    },
+  });
+
+  revalidateTag(MENU_CACHE_TAG, 'default');
+  revalidatePath('/menu');
+  return {
+    ...updated,
+    price: Number(updated.price),
+  };
+}
+
+export async function toggleAddonAvailabilityAction(id: string) {
+  await requireRole([Role.ADMIN]);
+
+  const addon = await prisma.menuAddon.findUniqueOrThrow({ where: { id } });
+  const updated = await prisma.menuAddon.update({
+    where: { id },
+    data: { isAvailable: !addon.isAvailable },
+  });
+
+  revalidateTag(MENU_CACHE_TAG, 'default');
+  revalidatePath('/menu');
+  return {
+    ...updated,
+    price: Number(updated.price),
+  };
+}
+
+export async function archiveAddonAction(id: string) {
+  await requireRole([Role.ADMIN]);
+
+  const updated = await prisma.menuAddon.update({
+    where: { id },
+    data: { isArchived: true, isAvailable: false },
+  });
+
+  revalidateTag(MENU_CACHE_TAG, 'default');
+  revalidatePath('/menu');
+  return {
+    ...updated,
+    price: Number(updated.price),
+  };
 }

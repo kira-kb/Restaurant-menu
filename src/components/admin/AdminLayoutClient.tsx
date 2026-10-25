@@ -14,6 +14,7 @@ import {
   Settings,
   ExternalLink,
   Activity,
+  Sparkles,
 } from 'lucide-react';
 import { LanguageProvider, useLanguage } from '@/lib/i18n/context';
 import LanguageSwitcher from '@/components/ui/LanguageSwitcher';
@@ -36,6 +37,7 @@ function AdminLayoutContent({ children, user }: AdminLayoutClientProps) {
     { href: '/admin/audit', label: dict.adminAudit, icon: Activity },
     { href: '/admin/menu', label: dict.adminMenu, icon: Utensils },
     { href: '/admin/categories', label: dict.adminCategories, icon: FolderTree },
+    { href: '/admin/addons', label: dict.adminAddons, icon: Sparkles },
     { href: '/admin/tables', label: dict.adminTables, icon: QrCode },
     { href: '/admin/staff', label: dict.adminStaff, icon: Users },
     { href: '/admin/orders', label: dict.adminOrders, icon: Receipt },

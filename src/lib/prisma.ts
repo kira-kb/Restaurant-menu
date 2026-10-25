@@ -4,6 +4,11 @@ const globalForPrisma = globalThis as unknown as {
   prisma: PrismaClient | undefined;
 };
 
+// Automatically discard stale Prisma instance if new models like menuAddon were added
+if (globalForPrisma.prisma && !('menuAddon' in (globalForPrisma.prisma as unknown as Record<string, unknown>))) {
+  globalForPrisma.prisma = undefined;
+}
+
 export const prisma =
   globalForPrisma.prisma ??
   new PrismaClient({
